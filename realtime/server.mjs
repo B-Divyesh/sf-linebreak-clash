@@ -25,7 +25,8 @@ const rateBuckets = new Map();
 mkdirSync(dirname(DB_PATH), { recursive: true });
 const db = new DatabaseSync(DB_PATH);
 db.exec('PRAGMA busy_timeout = 15000');
-db.exec('CREATE TABLE IF NOT EXISTS rooms (code TEXT PRIMARY KEY, state TEXT NOT NULL, updated_at INTEGER NOT NULL)');
+const hasRoomTable = db.prepare("SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = 'rooms'").get();
+if (!hasRoomTable) db.exec('CREATE TABLE rooms (code TEXT PRIMARY KEY, state TEXT NOT NULL, updated_at INTEGER NOT NULL)');
 
 function publicPlayer(player) {
   const { token: _token, input: _input, lastSeen: _lastSeen, hasConnected: _hasConnected, ...safe } = player;
