@@ -17,12 +17,14 @@
     "@axe-core/playwright": "4.10.2",
     "@playwright/test": "1.58.2",
     "@types/node": "22.15.30",
+    "@types/sql.js": "1.4.9",
+    "@types/ws": "8.18.1",
     "typescript": "5.9.2",
     "vite": "7.3.6",
-    "vitest": "3.2.7",
-    "@types/ws": "8.18.1"
+    "vitest": "3.2.7"
   },
   "dependencies": {
+    "sql.js": "1.13.0",
     "ws": "8.21.3"
   }
 }

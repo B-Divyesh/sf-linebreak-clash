@@ -1,8 +1,8 @@
 import { createServer } from 'node:http';
 import { randomBytes } from 'node:crypto';
-import { mkdirSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from 'node:fs';
 import { dirname } from 'node:path';
-import { DatabaseSync } from 'node:sqlite';
+import initSqlJs from 'sql.js';
 import { WebSocketServer, WebSocket } from 'ws';
 
 const PORT = Number(process.env.PORT || 8787);
@@ -23,10 +23,29 @@ const rooms = new Map();
 const rateBuckets = new Map();
 
 mkdirSync(dirname(DB_PATH), { recursive: true });
-const db = new DatabaseSync(DB_PATH);
-db.exec('PRAGMA busy_timeout = 15000');
-const hasRoomTable = db.prepare("SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = 'rooms'").get();
-if (!hasRoomTable) db.exec('CREATE TABLE rooms (code TEXT PRIMARY KEY, state TEXT NOT NULL, updated_at INTEGER NOT NULL)');
+const SQL = await initSqlJs();
+const db = new SQL.Database(existsSync(DB_PATH) ? readFileSync(DB_PATH) : undefined);
+db.run('CREATE TABLE IF NOT EXISTS rooms (code TEXT PRIMARY KEY, state TEXT NOT NULL, updated_at INTEGER NOT NULL)');
+
+function persistDatabase() {
+  const temporaryPath = `${DB_PATH}.tmp-${process.pid}`;
+  writeFileSync(temporaryPath, db.export());
+  renameSync(temporaryPath, DB_PATH);
+}
+
+function rows(sql, parameters = []) {
+  const statement = db.prepare(sql);
+  const values = [];
+  try {
+    statement.bind(parameters);
+    while (statement.step()) values.push(statement.getAsObject());
+  } finally {
+    statement.free();
+  }
+  return values;
+}
+
+persistDatabase();
 
 function publicPlayer(player) {
   const { token: _token, input: _input, lastSeen: _lastSeen, hasConnected: _hasConnected, ...safe } = player;
@@ -48,13 +67,13 @@ function publicRoom(room) {
 
 function saveRoom(room) {
   room.updatedAt = Date.now();
-  db.prepare('INSERT INTO rooms (code, state, updated_at) VALUES (?, ?, ?) ON CONFLICT(code) DO UPDATE SET state = excluded.state, updated_at = excluded.updated_at')
-    .run(room.code, JSON.stringify(room), room.updatedAt);
+  db.run('INSERT INTO rooms (code, state, updated_at) VALUES (?, ?, ?) ON CONFLICT(code) DO UPDATE SET state = excluded.state, updated_at = excluded.updated_at', [room.code, JSON.stringify(room), room.updatedAt]);
+  persistDatabase();
 }
 
 function loadRooms() {
   const cutoff = Date.now() - ROOM_TTL_MS;
-  for (const row of db.prepare('SELECT state FROM rooms WHERE updated_at >= ?').all(cutoff)) {
+  for (const row of rows('SELECT state FROM rooms WHERE updated_at >= ?', [cutoff])) {
     try {
       const room = JSON.parse(row.state);
       room.players.forEach((player) => {
@@ -65,7 +84,8 @@ function loadRooms() {
       rooms.set(room.code, room);
     } catch { /* Ignore a damaged expired room and keep serving healthy rooms. */ }
   }
-  db.prepare('DELETE FROM rooms WHERE updated_at < ?').run(cutoff);
+  db.run('DELETE FROM rooms WHERE updated_at < ?', [cutoff]);
+  persistDatabase();
 }
 
 function expireRooms() {
@@ -77,7 +97,8 @@ function expireRooms() {
       if (auth.room === roomCode) socket.close(4005, 'Room expired');
     }
   }
-  db.prepare('DELETE FROM rooms WHERE updated_at < ?').run(cutoff);
+  db.run('DELETE FROM rooms WHERE updated_at < ?', [cutoff]);
+  persistDatabase();
 }
 
 function code(length = 8) {
