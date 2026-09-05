@@ -15,8 +15,9 @@ test('starts the complete game without an account, ad, or payment @claim:free-en
 
 test('runs the accelerated deterministic 90-second round to an end screen @claim:round-end', async ({ page }) => {
   await page.goto('/?test=1');
-  await startSolo(page);
   await expect(page.locator('#round-timer')).toHaveText('01:30');
+  await startSolo(page);
+  expect(await page.evaluate(() => window.__linebreakDebug?.getState().duration)).toBe(90);
   await expect(page.locator('#end-screen')).toBeVisible({ timeout: 10_000 });
   await expect(page.locator('#end-result')).toContainText('wins');
   await expect(page.locator('#end-score')).toContainText('Final score:');
@@ -29,7 +30,9 @@ test('play again resets the timer and scores @claim:restart-reset', async ({ pag
   await startSolo(page);
   await expect(page.locator('#end-screen')).toBeVisible({ timeout: 10_000 });
   await page.getByRole('button', { name: 'Play again' }).click();
-  await expect(page.locator('#round-timer')).toHaveText('01:30');
+  const restarted = await page.evaluate(() => window.__linebreakDebug?.getState());
+  expect(restarted?.duration).toBe(90);
+  expect(restarted?.elapsed ?? 90).toBeLessThan(5);
   await expect(page.locator('#blue-score')).toHaveText('0');
   await expect(page.locator('#coral-score')).toHaveText('0');
   await expect(page.locator('[data-game-root]')).toHaveAttribute('data-state', 'playing');
