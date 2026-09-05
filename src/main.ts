@@ -1,17 +1,20 @@
 import './styles.css';
 import { clearSavedGameData, GameController } from './game/controller';
+import { OnlineController } from './online';
 
-type Route = 'home' | 'demo' | 'privacy' | 'terms' | 'not-found';
+type Route = 'home' | 'demo' | 'online' | 'privacy' | 'terms' | 'not-found';
 
 const appElement = document.querySelector<HTMLElement>('#app');
 if (!appElement) throw new Error('The app root is missing.');
 const app: HTMLElement = appElement;
 
 let controller: GameController | null = null;
+let onlineController: OnlineController | null = null;
 
 const routeDetails: Record<Route, { title: string; canonical?: string }> = {
   home: { title: 'Linebreak Clash — Capture relay nodes', canonical: '/' },
   demo: { title: 'Demo — Linebreak Clash', canonical: '/demo/' },
+  online: { title: 'Online room — Linebreak Clash', canonical: '/online/' },
   privacy: { title: 'Privacy — Linebreak Clash', canonical: '/privacy/' },
   terms: { title: 'Terms — Linebreak Clash', canonical: '/terms/' },
   'not-found': { title: 'Page not found — Linebreak Clash' },
@@ -22,6 +25,7 @@ function currentRoute(): Route {
   if (path === '/' && new URLSearchParams(location.search).get('demo') === '1') return 'demo';
   if (path === '/') return 'home';
   if (path === '/demo') return 'demo';
+  if (path === '/online') return 'online';
   if (path === '/privacy') return 'privacy';
   if (path === '/terms') return 'terms';
   return 'not-found';
@@ -36,6 +40,7 @@ function header(): string {
       </a>
       <nav aria-label="Main navigation">
         <a href="/" data-link>Play</a>
+        <a href="/online/" data-link>Online</a>
         <a href="/demo/" data-link>Sample</a>
         <a href="/privacy/" data-link>Privacy</a>
       </nav>
@@ -66,6 +71,7 @@ function gameMarkup(): string {
         <div class="stage-actions" aria-label="Round actions">
           <button class="button compact" type="button" data-action="start-solo">Start solo</button>
           <button class="button secondary compact" type="button" data-action="start-local">Start two players</button>
+          <a class="button secondary compact" href="/online/" data-link>Play online</a>
           <button class="icon-button" type="button" data-action="pause" aria-label="Pause round" disabled>Pause</button>
           <button class="icon-button" type="button" data-action="settings" aria-label="Open game settings">Settings</button>
         </div>
@@ -156,7 +162,7 @@ function homePage(): string {
         <div class="intro-panel">
           <p class="product-label">Linebreak Clash</p>
           <h1 tabindex="-1">Capture relay nodes with a moving trail</h1>
-          <p class="audience">For friends who want a quick browser arena on one shared screen.</p>
+          <p class="audience">For friends who want a quick browser arena on one screen or separate devices.</p>
           <div class="primary-choice">
             <a class="button" href="/demo/" data-link>Try it with sample data</a>
             <span>Loads a seeded round you can play now.</span>
@@ -186,12 +192,72 @@ function homePage(): string {
         <p class="section-number" aria-hidden="true">02</p>
         <div>
           <h2 id="limits-title">What this release includes</h2>
-          <p>This first release has solo and local two-player modes.</p>
-          <p>It does not connect players on separate devices yet.</p>
+          <p>This release has solo, local two-player, and private online modes.</p>
+          <p>Online rooms connect two to four players on separate devices.</p>
           <p>Settings and an active round stay in this browser.</p>
           <p>The sample never reads or changes saved game data.</p>
           <p>There is no chat, account, profile, ranking, ad, or purchase.</p>
         </div>
+      </section>
+    </main>
+    ${footer()}`;
+}
+
+function onlinePage(): string {
+  return `
+    ${header()}
+    <main id="main" class="online-main">
+      <section class="online-intro">
+        <p class="product-label">Private online room</p>
+        <h1 tabindex="-1">Join a room and capture relay nodes</h1>
+        <p>For two to four friends playing a 90-second round on separate devices.</p>
+        <p class="online-privacy">No account or open chat. A dropped player can rejoin for 20 seconds.</p>
+      </section>
+      <section id="online-entry" class="online-entry" aria-labelledby="entry-title">
+        <h2 id="entry-title">Create or join a room</h2>
+        <form id="create-room">
+          <label for="create-name">Your name</label>
+          <input id="create-name" name="name" maxlength="20" value="Host" autocomplete="nickname" required>
+          <button class="button" type="submit">Create a room</button>
+        </form>
+        <p class="form-divider">or</p>
+        <form id="join-room" novalidate>
+          <label for="join-name">Your name</label>
+          <input id="join-name" name="name" maxlength="20" value="Player 2" autocomplete="nickname" required>
+          <label for="join-code">Room code</label>
+          <input id="join-code" name="room" minlength="8" maxlength="8" inputmode="text" autocomplete="off" required aria-describedby="room-code-help online-error">
+          <small id="room-code-help">Enter the eight characters shared by the host.</small>
+          <button class="button secondary" type="submit">Join the room</button>
+        </form>
+      </section>
+      <p id="online-error" class="form-error" role="alert"></p>
+      <section id="online-room" class="online-room" aria-labelledby="online-arena-title" hidden>
+        <div class="room-header">
+          <div><p class="section-kicker">Room <strong id="room-code">--------</strong></p><h2 id="online-arena-title">Online relay arena</h2></div>
+          <div class="connection-actions"><p id="online-connection" class="connection-status" aria-live="polite">Not connected</p><button id="leave-online" class="text-button" type="button">Leave room</button></div>
+        </div>
+        <div class="invite-row">
+          <label for="invite-link">Invite link</label>
+          <input id="invite-link" readonly>
+          <button class="button secondary compact" type="button" id="copy-room">Copy invite</button>
+        </div>
+        <ul id="online-players" class="online-players" aria-label="Players in this room"></ul>
+        <div class="online-round-bar">
+          <p><strong id="online-status-text">Waiting for players</strong><span id="online-timer">01:30</span></p>
+          <button class="button" type="button" id="start-online" disabled>Start online round</button>
+          <span id="online-wait-note">Share the room code. Two players are needed to start.</span>
+        </div>
+        <div class="arena-wrap online-canvas-wrap">
+          <canvas id="online-arena" width="960" height="560" role="img" aria-label="Waiting online arena"></canvas>
+          <p id="online-reaction" class="reaction-ping" role="status" hidden></p>
+          <section id="online-end" class="end-screen" aria-labelledby="online-end-title" hidden><p class="section-kicker">Round result</p><h2 id="online-end-title">Round complete</h2><p id="online-result"></p><button class="button" type="button" id="restart-online">Play another round</button><p id="online-restart-note"></p></section>
+        </div>
+        <div class="online-controls" aria-label="Online steering controls">
+          <button type="button" data-online-control="left">Turn left</button>
+          <button type="button" data-online-control="dash">Dash</button>
+          <button type="button" data-online-control="right">Turn right</button>
+        </div>
+        <div class="ping-list online-pings" aria-label="Preset reactions"><span>Send a reaction</span><button type="button" data-online-reaction="Nice!">Nice!</button><button type="button" data-online-reaction="Close!">Close!</button><button type="button" data-online-reaction="Again!">Again!</button></div>
       </section>
     </main>
     ${footer()}`;
@@ -234,30 +300,34 @@ function privacyPage(): string {
         <h2 id="stored-title">Data stored on this device</h2>
         <p>The game stores sound, motion, and assist settings in local storage.</p>
         <p>An active round is stored for 20 seconds so a quick refresh can recover it.</p>
+        <p>An online room key is stored so you can rejoin the same room.</p>
         <p>The sample runs in memory. It does not read or change saved settings or rounds.</p>
       </section>
       <section aria-labelledby="sent-title">
         <h2 id="sent-title">Data sent elsewhere</h2>
-        <p>The game sends no gameplay, identity, analytics, or advertising data.</p>
-        <p>The hosting service receives standard web requests needed to deliver the files.</p>
+        <p>Online play sends your chosen name, controls, scores, and room state to this product's room service.</p>
+        <p>The room service uses a private SQLite database so a room survives a service restart.</p>
+        <p>Inactive room records are removed after 24 hours.</p>
+        <p>No data goes to analytics, advertising, or third-party game services.</p>
+        <p>The hosting service receives standard web requests needed to deliver the game.</p>
       </section>
       <section aria-labelledby="control-title">
         <h2 id="control-title">Clear your data</h2>
-        <p>You can clear all Linebreak Clash settings and active-round data here.</p>
+        <p>You can clear all Linebreak Clash settings, round data, and online room keys here.</p>
         <button class="button danger" type="button" id="open-clear-data">Clear saved game data</button>
         <p id="clear-feedback" role="status" aria-live="polite"></p>
       </section>
       <section aria-labelledby="request-title">
         <h2 id="request-title">Privacy questions</h2>
         <p>There is no account record to access or delete.</p>
-        <p>Email <a href="mailto:privacy@sociobot.in">privacy@sociobot.in</a> with a privacy question.</p>
+        <p>Email <a href="mailto:privacy@sociobot.in">privacy@sociobot.in</a> with a room code if you want its record removed early.</p>
       </section>
       <p class="effective-date">Effective 5 September 2026.</p>
     </main>
     <dialog id="clear-data-dialog" aria-labelledby="clear-data-title">
       <form method="dialog" class="dialog-panel">
         <h2 id="clear-data-title">Clear saved game data?</h2>
-        <p>This removes settings and any active round from this browser.</p>
+        <p>This removes settings, any active round, and online room keys from this browser.</p>
         <div class="dialog-actions">
           <button class="button danger" value="confirm">Clear data</button>
           <button class="button secondary" value="cancel">Keep data</button>
@@ -329,6 +399,7 @@ function bindPageActions(route: Route): void {
   if (route === 'home' || route === 'demo') {
     controller = new GameController(app, route === 'demo');
   }
+  if (route === 'online') onlineController = new OnlineController(app);
   if (route === 'demo') {
     document.querySelector<HTMLButtonElement>('#reset-demo')?.addEventListener('click', () => controller?.resetDemo());
   }
@@ -347,12 +418,16 @@ function bindPageActions(route: Route): void {
 function render(focusHeading = false): void {
   controller?.destroy();
   controller = null;
+  onlineController?.destroy();
+  onlineController = null;
   const route = currentRoute();
   updateHead(route);
   app.innerHTML = route === 'home'
     ? homePage()
     : route === 'demo'
       ? demoPage()
+      : route === 'online'
+        ? onlinePage()
       : route === 'privacy'
         ? privacyPage()
         : route === 'terms'

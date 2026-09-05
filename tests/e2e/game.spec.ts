@@ -33,8 +33,8 @@ test('play again resets the timer and scores @claim:restart-reset', async ({ pag
   const restarted = await page.evaluate(() => window.__linebreakDebug?.getState());
   expect(restarted?.duration).toBe(90);
   expect(restarted?.elapsed ?? 90).toBeLessThan(5);
-  await expect(page.locator('#blue-score')).toHaveText('0');
-  await expect(page.locator('#coral-score')).toHaveText('0');
+  expect(restarted?.players.blue.score).toBe(0);
+  expect(restarted?.players.coral.score).toBe(0);
   await expect(page.locator('[data-game-root]')).toHaveAttribute('data-state', 'playing');
 });
 
@@ -117,8 +117,12 @@ test('the sample sends no analytics, ads, or third-party requests @claim:privacy
   await page.getByRole('button', { name: 'Nice!' }).click();
   await page.getByRole('button', { name: 'Open game settings' }).click();
   await page.getByRole('button', { name: 'Save and close' }).click();
+  await page.goto(`${baseURL}/online/`);
+  await page.getByRole('button', { name: 'Create a room' }).click();
+  await expect(page.locator('#online-room')).toBeVisible();
   expect(requests.length).toBeGreaterThan(0);
-  expect(requests.every((url) => new URL(url).origin === new URL(baseURL ?? '').origin)).toBe(true);
+  const allowedOrigins = new Set([new URL(baseURL ?? '').origin, 'http://127.0.0.1:8787']);
+  expect(requests.every((url) => allowedOrigins.has(new URL(url).origin))).toBe(true);
   await context.close();
 });
 
@@ -157,6 +161,73 @@ test('the arena renders at least 50 FPS on the mobile test profile @claim:mobile
   await context.close();
 });
 
+test('two independent clients join a room and finish the same round @claim:online-room', async ({ browser, baseURL }) => {
+  const hostContext = await browser.newContext();
+  const guestContext = await browser.newContext();
+  const host = await hostContext.newPage();
+  const guest = await guestContext.newPage();
+  await host.goto(`${baseURL}/online/`);
+  await host.getByLabel('Your name').first().fill('Ada');
+  await host.getByRole('button', { name: 'Create a room' }).click();
+  await expect(host.locator('#online-room')).toBeVisible();
+  const roomCode = (await host.locator('#room-code').textContent())?.trim() ?? '';
+  expect(roomCode).toMatch(/^[2-9A-HJ-NP-Z]{8}$/);
+  await guest.goto(`${baseURL}/online/?room=${roomCode}`);
+  await guest.getByLabel('Your name').nth(1).fill('Lin');
+  await guest.getByRole('button', { name: 'Join the room' }).click();
+  await expect(host.getByText('Lin', { exact: true })).toBeVisible();
+  await host.getByRole('button', { name: 'Start online round' }).click();
+  await expect(host.locator('#online-status-text')).toHaveText('Round active');
+  await expect(guest.locator('#online-status-text')).toHaveText('Round active');
+  await expect(host.locator('#online-end')).toBeVisible({ timeout: 8_000 });
+  await expect(guest.locator('#online-end')).toBeVisible({ timeout: 8_000 });
+  expect(await host.locator('#online-result').textContent()).toMatch(/wins|draw/);
+  expect(await guest.locator('#online-result').textContent()).toBe(await host.locator('#online-result').textContent());
+  await host.getByRole('button', { name: 'Play another round' }).click();
+  await expect(host.locator('#online-status-text')).toHaveText('Round active');
+  await expect(host.locator('#online-timer')).toHaveText('00:04');
+  await expect(host.locator('#online-players li b')).toHaveText(['0', '0']);
+  await expect(guest.locator('#online-status-text')).toHaveText('Round active');
+  await hostContext.close();
+  await guestContext.close();
+});
+
+test('a real client rejoins its active room after a dropped page @claim:online-rejoin', async ({ browser, baseURL }) => {
+  const hostContext = await browser.newContext();
+  const guestContext = await browser.newContext();
+  const host = await hostContext.newPage();
+  const guest = await guestContext.newPage();
+  await host.goto(`${baseURL}/online/`);
+  await host.getByRole('button', { name: 'Create a room' }).click();
+  await expect(host.locator('#online-room')).toBeVisible();
+  const roomCode = (await host.locator('#room-code').textContent())?.trim() ?? '';
+  expect(roomCode).toMatch(/^[2-9A-HJ-NP-Z]{8}$/);
+  await guest.goto(`${baseURL}/online/?room=${roomCode}`);
+  await guest.getByRole('button', { name: 'Join the room' }).click();
+  await expect(host.locator('#online-players li')).toHaveCount(2);
+  await host.getByRole('button', { name: 'Start online round' }).click();
+  await expect(guest.locator('#online-status-text')).toHaveText('Round active');
+  await guest.reload();
+  await expect(guest.locator('#online-connection')).toHaveText('Connected');
+  await expect(guest.locator('#room-code')).toHaveText(roomCode);
+  await expect(guest.locator('#online-status-text')).toHaveText(/Round active|Round complete/);
+  await hostContext.close();
+  await guestContext.close();
+});
+
+test('an invalid online room code gives a useful recovery message', async ({ page }) => {
+  await page.goto('/online/');
+  await page.getByLabel('Your name').first().fill('');
+  await page.getByLabel('Your name').first().pressSequentially('Ada');
+  await expect(page.getByLabel('Your name').first()).toHaveValue('Ada');
+  await page.getByLabel('Room code').fill('BAD');
+  await page.getByRole('button', { name: 'Join the room' }).click();
+  await expect(page.locator('#online-error')).toHaveText('Enter the eight-character room code.');
+  await page.getByLabel('Room code').fill('22222222');
+  await page.getByRole('button', { name: 'Join the room' }).click();
+  await expect(page.locator('#online-error')).toHaveText('Room not found. Check the code.');
+});
+
 test('supports touch play, pause recovery, and an expired snapshot', async ({ browser, baseURL }) => {
   const context = await browser.newContext({ viewport: { width: 393, height: 727 }, deviceScaleFactor: 2.75, hasTouch: true, isMobile: true });
   const page = await context.newPage();
@@ -187,6 +258,11 @@ test('supports touch play, pause recovery, and an expired snapshot', async ({ br
   await page.reload();
   await expect(page.locator('[data-game-root]')).toHaveAttribute('data-state', 'ready');
   await expect(page.locator('#round-timer')).toHaveText('01:30');
+  await page.goto(`${baseURL}/online/`);
+  await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(393);
+  const createButton = await page.getByRole('button', { name: 'Create a room' }).boundingBox();
+  expect(createButton?.height ?? 0).toBeGreaterThanOrEqual(44);
   await context.close();
 });
 
@@ -200,6 +276,10 @@ test('has keyboard focus, route titles, legal pages, and a designed missing page
   await page.getByRole('link', { name: 'Privacy' }).first().click();
   await expect(page).toHaveTitle('Privacy — Linebreak Clash');
   await expect(page.locator('h1')).toHaveCount(1);
+  await page.goto('/online/');
+  await expect(page).toHaveTitle('Online room — Linebreak Clash');
+  await expect(page.locator('h1')).toHaveCount(1);
+  await page.goto('/privacy/');
   await page.getByRole('link', { name: 'Terms' }).click();
   await expect(page).toHaveTitle('Terms — Linebreak Clash');
   await page.goBack();
@@ -212,7 +292,7 @@ test('has keyboard focus, route titles, legal pages, and a designed missing page
 });
 
 test('has no serious accessibility violations on every route', async ({ page }) => {
-  for (const route of ['/', '/demo/', '/privacy/', '/terms/', '/missing-page']) {
+  for (const route of ['/', '/demo/', '/online/', '/privacy/', '/terms/', '/missing-page']) {
     await page.goto(route);
     const results = await new AxeBuilder({ page: page as never }).analyze();
     const serious = results.violations.filter((violation) => violation.impact === 'serious' || violation.impact === 'critical');
@@ -226,10 +306,12 @@ test('respects reduced motion and clears local data with confirmation', async ({
   const transition = await page.locator('.button').first().evaluate((element) => getComputedStyle(element).transitionDuration);
   expect(['0s', '0.00001s', '1e-05s']).toContain(transition);
   await page.evaluate(() => localStorage.setItem('linebreak-clash:settings', '{"sound":false}'));
+  await page.evaluate(() => localStorage.setItem('linebreak-clash:online:ABCDEFGH', '{"token":"test"}'));
   await page.goto('/privacy/');
   await page.getByRole('button', { name: 'Clear saved game data' }).click();
   await expect(page.getByRole('dialog', { name: 'Clear saved game data?' })).toBeVisible();
   await page.getByRole('button', { name: 'Clear data', exact: true }).click();
   await expect(page.locator('#clear-feedback')).toContainText('cleared');
   expect(await page.evaluate(() => localStorage.getItem('linebreak-clash:settings'))).toBeNull();
+  expect(await page.evaluate(() => localStorage.getItem('linebreak-clash:online:ABCDEFGH'))).toBeNull();
 });

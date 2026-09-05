@@ -92,6 +92,10 @@ export class GameController {
   destroy(): void {
     cancelAnimationFrame(this.animationFrame);
     this.resizeObserver.disconnect();
+    this.root.removeEventListener('click', this.onRootClick);
+    window.removeEventListener('keydown', this.onKeyDown);
+    window.removeEventListener('keyup', this.onKeyUp);
+    document.removeEventListener('visibilitychange', this.onVisibilityChange);
     window.__linebreakDebug = undefined;
   }
 
@@ -168,38 +172,12 @@ export class GameController {
   }
 
   private bindEvents(): void {
-    this.root.addEventListener('click', (event) => {
-      const button = (event.target as HTMLElement).closest<HTMLButtonElement>('button[data-action]');
-      if (!button) return;
-      const action = button.dataset.action;
-      if (action === 'start-solo') this.start('solo', this.isDemo);
-      if (action === 'start-local') this.start('local', this.isDemo);
-      if (action === 'play-again') this.start(this.state.mode, this.isDemo);
-      if (action === 'pause') this.openPause();
-      if (action === 'resume') this.closePause();
-      if (action === 'restart') this.confirmRestart();
-      if (action === 'settings') this.openSettings();
-      if (action === 'close-settings') this.closeSettings();
-      if (action === 'ping') this.sendPing(button.dataset.ping ?? 'Nice round!');
-    });
+    this.root.addEventListener('click', this.onRootClick);
 
     window.addEventListener('keydown', this.onKeyDown, { passive: false });
     window.addEventListener('keyup', this.onKeyUp, { passive: false });
     this.bindTouchControls();
-    document.addEventListener('visibilitychange', () => {
-      if (document.hidden) {
-        if (this.state.status === 'playing') {
-          this.pausedByVisibility = true;
-          this.pause(false);
-        }
-      } else if (this.pausedByVisibility && this.state.status === 'paused') {
-        this.pausedByVisibility = false;
-        this.state.status = 'playing';
-        this.gameRoot.dataset.state = 'playing';
-        this.previousTime = performance.now();
-        this.announce('Round resumed after returning to the tab.');
-      }
-    });
+    document.addEventListener('visibilitychange', this.onVisibilityChange);
     this.pauseDialog.addEventListener('cancel', (event) => {
       event.preventDefault();
       this.closePause();
@@ -213,6 +191,36 @@ export class GameController {
     this.require<HTMLInputElement>('#setting-assist').addEventListener('change', () => this.applySettings());
     this.require<HTMLSelectElement>('#setting-controls').addEventListener('change', () => this.applySettings());
   }
+
+  private onRootClick = (event: Event): void => {
+    const button = (event.target as HTMLElement).closest<HTMLButtonElement>('button[data-action]');
+    if (!button) return;
+    const action = button.dataset.action;
+    if (action === 'start-solo') this.start('solo', this.isDemo);
+    if (action === 'start-local') this.start('local', this.isDemo);
+    if (action === 'play-again') this.start(this.state.mode, this.isDemo);
+    if (action === 'pause') this.openPause();
+    if (action === 'resume') this.closePause();
+    if (action === 'restart') this.confirmRestart();
+    if (action === 'settings') this.openSettings();
+    if (action === 'close-settings') this.closeSettings();
+    if (action === 'ping') this.sendPing(button.dataset.ping ?? 'Nice round!');
+  };
+
+  private onVisibilityChange = (): void => {
+    if (document.hidden) {
+      if (this.state.status === 'playing') {
+        this.pausedByVisibility = true;
+        this.pause(false);
+      }
+    } else if (this.pausedByVisibility && this.state.status === 'paused') {
+      this.pausedByVisibility = false;
+      this.state.status = 'playing';
+      this.gameRoot.dataset.state = 'playing';
+      this.previousTime = performance.now();
+      this.announce('Round resumed after returning to the tab.');
+    }
+  };
 
   private onKeyDown = (event: KeyboardEvent): void => {
     if (event.repeat && (event.code === 'Space' || event.code === 'Enter')) return;
@@ -445,8 +453,9 @@ import { advanceGame } from './core';
 const requireCoreAdvance = { advanceGame };
 
 export function clearSavedGameData(): void {
-  localStorage.removeItem(SETTINGS_KEY);
-  localStorage.removeItem(ROUND_KEY);
+  for (const key of Object.keys(localStorage)) {
+    if (key.startsWith('linebreak-clash:')) localStorage.removeItem(key);
+  }
 }
 
 export function getSavedSettingsForTest(): Settings | null {
