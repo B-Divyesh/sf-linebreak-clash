@@ -1,4 +1,4 @@
-const CACHE_NAME = 'linebreak-clash-v4';
+const CACHE_NAME = 'linebreak-clash-v5';
 const SHELL = ['/', '/demo/', '/privacy/', '/terms/', '/404.html', '/favicon.svg', '/og-image.png'];
 
 self.addEventListener('install', (event) => {

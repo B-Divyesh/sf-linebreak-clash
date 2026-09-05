@@ -147,6 +147,9 @@ test('the arena renders at least 50 FPS on the mobile test profile @claim:mobile
   });
   const page = await context.newPage();
   await page.goto(`${baseURL}/`);
+  const arena = await page.locator('#arena').boundingBox();
+  expect(arena?.y ?? Number.POSITIVE_INFINITY).toBeLessThan(844);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(390);
   await startSolo(page);
   await page.waitForTimeout(3_000);
   const fps = await page.evaluate(() => window.__linebreakDebug?.getFps() ?? 0);
@@ -155,9 +158,12 @@ test('the arena renders at least 50 FPS on the mobile test profile @claim:mobile
 });
 
 test('supports touch play, pause recovery, and an expired snapshot', async ({ browser, baseURL }) => {
-  const context = await browser.newContext({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true });
+  const context = await browser.newContext({ viewport: { width: 393, height: 727 }, deviceScaleFactor: 2.75, hasTouch: true, isMobile: true });
   const page = await context.newPage();
   await page.goto(`${baseURL}/`);
+  const arena = await page.locator('#arena').boundingBox();
+  expect(arena?.y ?? Number.POSITIVE_INFINITY).toBeLessThan(727);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(393);
   await startSolo(page);
   const angleBefore = await page.evaluate(() => window.__linebreakDebug?.getState().players.blue.angle ?? 0);
   const left = page.getByRole('button', { name: 'Player 1 steer left' });
