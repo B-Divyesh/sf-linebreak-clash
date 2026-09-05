@@ -263,6 +263,11 @@ test('supports touch play, pause recovery, and an expired snapshot', async ({ br
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(393);
   const createButton = await page.getByRole('button', { name: 'Create a room' }).boundingBox();
   expect(createButton?.height ?? 0).toBeGreaterThanOrEqual(44);
+  await page.setViewportSize({ width: 320, height: 568 });
+  await page.goto(`${baseURL}/`);
+  await page.evaluate(() => { document.documentElement.style.fontSize = '200%'; });
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(320);
+  await expect(page.getByRole('link', { name: 'Try it with sample data' })).toBeVisible();
   await context.close();
 });
 
