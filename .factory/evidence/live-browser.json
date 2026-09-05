@@ -1,0 +1,21 @@
+{
+  "desktopFirstScreen": true,
+  "phoneFirstScreen": true,
+  "phoneFps": 60.003000150007495,
+  "sampleScore": "4–2",
+  "sampleReset": true,
+  "realSettingsUnchanged": true,
+  "offlineReload": true,
+  "reducedMotion": true,
+  "roomCodeLength": 8,
+  "independentClients": 2,
+  "rejoinedDuringRound": true,
+  "liveRoundDurationSeconds": 90,
+  "endResult": "Lin wins.",
+  "rematchReset": true,
+  "consoleErrors": 0,
+  "requestOrigins": [
+    "https://linebreak-clash.sociobot.in",
+    "https://linebreak-clash-realtime.sociobot.in"
+  ]
+}
