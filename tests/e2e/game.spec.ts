@@ -22,7 +22,7 @@ test('runs the accelerated deterministic 90-second round to an end screen @claim
   await expect(page.locator('#end-result')).toContainText('wins');
   await expect(page.locator('#end-score')).toContainText('Final score:');
   await expect(page.getByRole('button', { name: 'Play again' })).toBeFocused();
-  await page.screenshot({ path: '.factory/evidence/round-end.png' });
+  await page.screenshot({ path: 'test-results/round-end.png' });
 });
 
 test('play again resets the timer and scores @claim:restart-reset', async ({ page }) => {
