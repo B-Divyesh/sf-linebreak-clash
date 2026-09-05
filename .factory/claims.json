@@ -1,0 +1,87 @@
+[
+  {
+    "id": "free-entry",
+    "claim": "A full local round starts without an account, ad, or payment.",
+    "where": "landing facts, privacy, README",
+    "test": "npm test -- --grep @claim:free-entry",
+    "sandbox": "fresh browser context; start the real solo mode and assert active play without an identity or payment step"
+  },
+  {
+    "id": "round-end",
+    "claim": "A 90-second round reaches an actual win or loss end screen.",
+    "where": "game timer, how to play, README",
+    "test": "npm test -- --grep @claim:round-end",
+    "sandbox": "fresh browser context; fixed 60 Hz simulation accelerated 18 times; assert 01:30 start, winner, final score, and focused restart"
+  },
+  {
+    "id": "restart-reset",
+    "claim": "Play again resets the timer and both scores.",
+    "where": "end screen, README verification",
+    "test": "npm test -- --grep @claim:restart-reset",
+    "sandbox": "complete a deterministic run, choose Play again, and assert 01:30 and 0–0 during active play"
+  },
+  {
+    "id": "relay-score",
+    "claim": "Capturing a relay adds two points.",
+    "where": "how to play, README",
+    "test": "npm run test:unit -- --testNamePattern @claim:relay-score",
+    "sandbox": "seeded core state; move a player through an active relay and assert an observable two-point increase and relay turnover"
+  },
+  {
+    "id": "dash-break",
+    "claim": "A dash briefly crosses a trail without a collision.",
+    "where": "how to play, README",
+    "test": "npm run test:unit -- --testNamePattern @claim:dash-break",
+    "sandbox": "seeded core state; drive a dashing player through an existing opposing segment and assert the player remains active"
+  },
+  {
+    "id": "play-modes",
+    "claim": "Solo mode has a moving bot, and two-player mode accepts separate keyboard controls.",
+    "where": "game controls, release scope, README",
+    "test": "npm test -- --grep @claim:play-modes",
+    "sandbox": "fresh real game; observe bot movement, switch to local mode, then assert A and Arrow Left turn different players"
+  },
+  {
+    "id": "settings-persist",
+    "claim": "Sound, reduced-effects, and assist settings stay on this device.",
+    "where": "settings dialog, privacy, README",
+    "test": "npm test -- --grep @claim:settings-persist",
+    "sandbox": "fresh real game; change all three controls, reload, and assert each restored value"
+  },
+  {
+    "id": "refresh-recovery",
+    "claim": "An active round recovers after a refresh within 20 seconds.",
+    "where": "privacy, README",
+    "test": "npm test -- --grep @claim:refresh-recovery",
+    "sandbox": "fresh real game; advance play, reload immediately, and assert playing state and elapsed time continue rather than reset"
+  },
+  {
+    "id": "demo-isolation",
+    "claim": "The sample never reads or changes saved game data.",
+    "where": "sample banner, release scope, privacy, README",
+    "test": "npm test -- --grep @claim:demo-isolation",
+    "sandbox": "preseed real settings; enter sample in one click, change settings, reset, and assert the real value and demo-key list are unchanged"
+  },
+  {
+    "id": "privacy-requests",
+    "claim": "The game makes no analytics, advertising, or third-party runtime requests.",
+    "where": "landing facts, privacy, README",
+    "test": "npm test -- --grep @claim:privacy-requests",
+    "sandbox": "fresh sample context; record all requests through play, reaction, and settings actions; assert every request is same-origin"
+  },
+  {
+    "id": "offline-play",
+    "claim": "Solo and local rounds work offline after the first visit.",
+    "where": "landing facts, README",
+    "test": "npm test -- --grep @claim:offline-play",
+    "sandbox": "dedicated fresh browser context; await service-worker control, set the context offline, reload, and start both advertised modes"
+  },
+  {
+    "id": "mobile-fps",
+    "claim": "The arena renders at least 50 frames per second in the documented mobile browser profile.",
+    "where": "live HUD, README",
+    "test": "npm test -- --grep @claim:mobile-fps",
+    "sandbox": "fresh 390×844, 2x DPR, touch-enabled Chromium context; run solo for three seconds and measure requestAnimationFrame throughput"
+  }
+]
+
