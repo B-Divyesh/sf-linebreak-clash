@@ -24,6 +24,7 @@ const rateBuckets = new Map();
 
 mkdirSync(dirname(DB_PATH), { recursive: true });
 const db = new DatabaseSync(DB_PATH);
+db.exec('PRAGMA busy_timeout = 15000');
 db.exec('CREATE TABLE IF NOT EXISTS rooms (code TEXT PRIMARY KEY, state TEXT NOT NULL, updated_at INTEGER NOT NULL)');
 
 function publicPlayer(player) {
@@ -248,11 +249,17 @@ function step(room, dt) {
 }
 
 let previous = performance.now(); let accumulator = 0; let broadcastClock = 0; let saveClock = 0;
-setInterval(() => { const now = performance.now(); accumulator += Math.min(.2, (now - previous) / 1000); previous = now; while (accumulator >= 1 / 60) { for (const room of rooms.values()) step(room, 1 / 60); accumulator -= 1 / 60; } broadcastClock += 1 / 60; saveClock += 1 / 60; if (broadcastClock >= 1 / 15) { for (const room of rooms.values()) if (room.status !== 'waiting' || room.players.some((player) => player.connected)) broadcast(room); broadcastClock = 0; } if (saveClock >= 1) { for (const room of rooms.values()) if (room.status === 'playing') saveRoom(room); saveClock = 0; } }, 1000 / 60);
-setInterval(expireRooms, 60_000).unref();
+const simulationTimer = setInterval(() => { const now = performance.now(); accumulator += Math.min(.2, (now - previous) / 1000); previous = now; while (accumulator >= 1 / 60) { for (const room of rooms.values()) step(room, 1 / 60); accumulator -= 1 / 60; } broadcastClock += 1 / 60; saveClock += 1 / 60; if (broadcastClock >= 1 / 15) { for (const room of rooms.values()) if (room.status !== 'waiting' || room.players.some((player) => player.connected)) broadcast(room); broadcastClock = 0; } if (saveClock >= 1) { for (const room of rooms.values()) if (room.status === 'playing') saveRoom(room); saveClock = 0; } }, 1000 / 60);
+const expiryTimer = setInterval(expireRooms, 60_000); expiryTimer.unref();
 
 loadRooms();
 server.listen(PORT, '0.0.0.0', () => console.log(`linebreak-clash-realtime listening on ${PORT}`));
 
-function shutdown() { for (const room of rooms.values()) saveRoom(room); db.close(); server.close(() => process.exit(0)); }
+function shutdown() {
+  clearInterval(simulationTimer); clearInterval(expiryTimer);
+  for (const room of rooms.values()) saveRoom(room);
+  for (const socket of clients.keys()) socket.close(1012, 'Service restarting');
+  server.close(() => { db.close(); process.exit(0); });
+  setTimeout(() => { db.close(); process.exit(0); }, 8_000).unref();
+}
 process.on('SIGTERM', shutdown); process.on('SIGINT', shutdown);
