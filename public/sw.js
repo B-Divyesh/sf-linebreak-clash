@@ -1,15 +1,21 @@
-const CACHE_NAME = 'linebreak-clash-v2';
+const CACHE_NAME = 'linebreak-clash-v4';
 const SHELL = ['/', '/demo/', '/privacy/', '/terms/', '/404.html', '/favicon.svg', '/og-image.png'];
 
 self.addEventListener('install', (event) => {
   event.waitUntil((async () => {
     const cache = await caches.open(CACHE_NAME);
-    await cache.addAll(SHELL);
-    const home = await cache.match('/');
-    if (home) {
-      const markup = await home.text();
-      const assets = [...markup.matchAll(/(?:src|href)="(\/assets\/[^"]+)"/g)].map((match) => match[1]);
-      await cache.addAll([...new Set(assets)]);
+    let homeMarkup = '';
+    for (const path of SHELL) {
+      const response = await fetch(new Request(path, { cache: 'reload' }));
+      if (!response.ok) throw new Error(`Could not cache ${path}`);
+      if (path === '/') homeMarkup = await response.clone().text();
+      await cache.put(path, response);
+    }
+    const assets = [...homeMarkup.matchAll(/(?:src|href)="(\/assets\/[^"]+)"/g)].map((match) => match[1]);
+    for (const path of new Set(assets)) {
+      const response = await fetch(new Request(path, { cache: 'reload' }));
+      if (!response.ok) throw new Error(`Could not cache ${path}`);
+      await cache.put(path, response);
     }
     await self.skipWaiting();
   })());
@@ -31,7 +37,8 @@ self.addEventListener('fetch', (event) => {
 
   if (request.mode === 'navigate') {
     event.respondWith((async () => {
-      const cached = (await caches.match(request)) || (await caches.match(url.pathname.endsWith('/') ? url.pathname : `${url.pathname}/`));
+      const cached = (await caches.match(url.pathname, { ignoreVary: true }))
+        || (await caches.match(url.pathname.endsWith('/') ? url.pathname : `${url.pathname}/`, { ignoreVary: true }));
       if (cached) return cached;
       try {
         const response = await fetch(request);
@@ -48,7 +55,7 @@ self.addEventListener('fetch', (event) => {
   }
 
   event.respondWith((async () => {
-    const cached = await caches.match(request);
+    const cached = await caches.match(url.pathname, { ignoreVary: true });
     if (cached) return cached;
     const response = await fetch(request);
     if (response.ok) {
