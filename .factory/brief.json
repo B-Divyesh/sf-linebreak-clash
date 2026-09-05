@@ -1,0 +1,37 @@
+{
+  "slug": "linebreak-clash",
+  "title": "Linebreak Clash",
+  "territory": "games-creative",
+  "user": "Pairs or small groups who want a fast browser arena game that survives a dropped connection and has more variety than classic light-cycle survival.",
+  "evidence": [
+    {
+      "url": "https://hn.algolia.com/api/v1/items/48733433",
+      "date": "2026-06-30",
+      "quote_or_summary": "Curvytron 2's discussion asks how reconnection is handled and describes community interest in CTF and zone-control variants of Curve Fever-style play."
+    },
+    {
+      "url": "https://hn.algolia.com/api/v1/items/49499499",
+      "date": "2026-08-30",
+      "quote_or_summary": "The Snaketron relaunch documents the need for server-side state in competitive browser Snake; a reader reports the site failing to load, underlining fragility in quick-play web arenas."
+    },
+    {
+      "url": "https://curvytron2.com",
+      "date": "2026-06-30",
+      "quote_or_summary": "Fetched product page identifies Curvytron 2 as a free online multiplayer browser game, corroborating the active web-arena category."
+    }
+  ],
+  "recurrence": "Two 2026 competitive-browser threads: one asks directly about reconnection and modes, the other foregrounds insecure client state and availability.",
+  "current_workaround": "Play Curve/Snake clones, tolerate a reset after a tab hiccup, or use a larger multiplayer title.",
+  "incumbents_and_gap": "Curvytron and Snaketron cover survival; their conversations leave room for session-safe objective modes that are still legible in one screenful.",
+  "smallest_useful_product": "2-4 player room-code arena with 90-second rounds: draw temporary trails to capture relay nodes; a trail-break dash changes routes. Host-authoritative snapshots allow a 20-second rejoin. Non-goals: open chat, cosmetics economy, public player profiles, or ranked play.",
+  "success_measure": "95% of transient disconnects rejoin within 20 seconds without ending the round; median group plays four rounds.",
+  "artifact_class": "browser-game",
+  "monetization": "free \u2014 it needs zero-friction group sharing and no behavioral ads.",
+  "constraints": "Server-authoritative collision and rate limits; random room codes must be unguessable; preset reaction pings avoid moderation burden.",
+  "est_build_effort": "M",
+  "scale": "small (default)",
+  "why_distinct": "Objective capture plus reliable rejoin answers the explicit mode/reconnection gap, rather than repainting a Snake clone.",
+  "confidence": 4,
+  "state": "RESEARCHED",
+  "research_run": "research-browser-games-0901-204325-2"
+}
