@@ -1,0 +1,5 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://linebreak-clash.sociobot.in/sitemap.xml
+

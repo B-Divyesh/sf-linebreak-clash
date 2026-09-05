@@ -1,0 +1,12 @@
+{
+  "name": "Linebreak Clash",
+  "short_name": "Linebreak",
+  "description": "Capture relay nodes in a 90-second trail arena.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f3eddf",
+  "theme_color": "#10233d",
+  "icons": [
+    { "src": "/apple-touch-icon.png", "sizes": "180x180", "type": "image/png" }
+  ]
+}

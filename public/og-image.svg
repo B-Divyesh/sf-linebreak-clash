@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" role="img" aria-labelledby="title desc">
+  <title id="title">Linebreak Clash relay arena</title>
+  <desc id="desc">Blue and vermilion trails cross an ivory relay map with numbered nodes.</desc>
+  <rect width="1200" height="630" fill="#10233d"/>
+  <rect x="48" y="48" width="1104" height="534" fill="#f3eddf" stroke="#d7f13b" stroke-width="8"/>
+  <g stroke="#ded4bf" stroke-width="2" opacity=".8">
+    <path d="M128 48v534M208 48v534M288 48v534M368 48v534M448 48v534M528 48v534M608 48v534M688 48v534M768 48v534M848 48v534M928 48v534M1008 48v534M1088 48v534"/>
+    <path d="M48 128h1104M48 208h1104M48 288h1104M48 368h1104M48 448h1104M48 528h1104"/>
+  </g>
+  <path d="M80 420C210 420 215 170 350 170s150 290 300 290 170-242 300-242 110 92 170 92" fill="none" stroke="#0759c7" stroke-width="22" stroke-linecap="round"/>
+  <path d="M80 245c150 0 130 245 310 245s125-330 300-330 150 290 430 290" fill="none" stroke="#c73b2f" stroke-width="20" stroke-dasharray="46 15" stroke-linecap="round"/>
+  <g fill="#d7f13b" stroke="#10233d" stroke-width="7">
+    <circle cx="350" cy="170" r="39"/><circle cx="650" cy="460" r="39"/><circle cx="690" cy="160" r="39"/>
+  </g>
+  <g fill="#10233d" font-family="Arial, sans-serif" font-weight="700" font-size="30" text-anchor="middle">
+    <text x="350" y="181">1</text><text x="650" y="471">2</text><text x="690" y="171">3</text>
+  </g>
+  <rect x="92" y="82" width="450" height="122" fill="#f3eddf" stroke="#10233d" stroke-width="5"/>
+  <text x="116" y="132" fill="#10233d" font-family="Arial Narrow, Arial, sans-serif" font-weight="900" font-size="49">LINEBREAK CLASH</text>
+  <text x="116" y="172" fill="#526174" font-family="Arial, sans-serif" font-size="23">Capture relay nodes in a 90-second trail arena.</text>
+</svg>
+
