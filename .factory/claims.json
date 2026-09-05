@@ -67,7 +67,7 @@
     "claim": "The game makes no analytics, advertising, or third-party runtime requests.",
     "where": "landing facts, privacy, README",
     "test": "npm test -- --grep @claim:privacy-requests",
-    "sandbox": "fresh sample context; record all requests through play, reaction, and settings actions; assert every request is same-origin"
+    "sandbox": "fresh context; record requests through sample and online room creation; assert every request goes only to the static origin or its product-owned room service"
   },
   {
     "id": "offline-play",
@@ -82,5 +82,26 @@
     "where": "live HUD, README",
     "test": "npm test -- --grep @claim:mobile-fps",
     "sandbox": "fresh 390×844, 2x DPR, touch-enabled Chromium context; run solo for three seconds and measure requestAnimationFrame throughput"
+  },
+  {
+    "id": "online-room",
+    "claim": "Two to four players on separate devices can share a server-authoritative 90-second room and finish the same round.",
+    "where": "online page, release scope, README",
+    "test": "npm test -- --grep @claim:online-room",
+    "sandbox": "two independent browser contexts create and join a real room, start the accelerated server round, compare end results, and restart with zero scores"
+  },
+  {
+    "id": "online-rejoin",
+    "claim": "A dropped online player can rejoin the active room for 20 seconds.",
+    "where": "online page, privacy, README",
+    "test": "npm test -- --grep @claim:online-rejoin",
+    "sandbox": "two independent browser contexts start a real room; reload one active client and assert its stored room key restores the same room and round"
+  },
+  {
+    "id": "room-persistence",
+    "claim": "Online room state survives a room-service restart and expires after 24 hours without activity.",
+    "where": "privacy, README",
+    "test": "npm run test:realtime",
+    "sandbox": "real SQLite file; start an active room, restart the service and reconnect, then age the record past 24 hours and assert it is absent after another restart"
   }
 ]

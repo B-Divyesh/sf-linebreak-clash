@@ -1,1 +1,1 @@
-Capture relay nodes in a 90-second trail arena for one or two local players.
+Capture relay nodes in 90-second solo, local, or two-to-four-player online rounds.

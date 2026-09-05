@@ -23,6 +23,8 @@ reduces glare around the canvas. The game paints every background explicitly.
 | Ink muted | `#526174` | secondary text on paper |
 | Cobalt | `#0759c7` | player one and primary actions |
 | Vermilion | `#c73b2f` | player two and urgent state |
+| Violet | `#6a3fc7` | online player three |
+| Forest | `#16705a` | online player four |
 | Relay | `#d7f13b` | neutral capture target |
 | Success | `#146343` | restored/saved feedback |
 
@@ -43,6 +45,9 @@ Controls use clipped lower-right corners, 2 px ink borders, and a 3 px offset
 print shadow. Pressing a control closes the offset. Relay nodes use concentric
 rings and large numbers. Player one is a circle with a solid cobalt trail;
 player two is a diamond with a vermilion trail broken by short print gaps.
+Online players three and four add violet and green route ink. Each player also
+has a written name, connection state, and score, so color never carries state
+alone.
 
 The first screen is asymmetric: instructions occupy a narrow dispatch column
 and the live arena takes the larger field. On phones the dispatch column stacks
@@ -64,6 +69,10 @@ remain for eight seconds, so the arena becomes more constrained through the
 middle of each 90-second round and then clears continuously. Assist mode slows
 both players by 18% and widens safe spawn clearance.
 
+Online mode uses the same rules on the room service. Its fixed-step simulation
+is authoritative, and browsers only send steering and dash input. A completed
+room keeps the same group together for one-button rematches.
+
 ## Asset plan and provenance
 
 All visual assets are original, hand-authored vectors or procedural Canvas 2D
@@ -72,4 +81,3 @@ relay stamps, player marks, favicon, social card, and 404 illustration. No stock
 third-party, generated raster, brand, or copyrighted character asset is used.
 Raster generation was intentionally skipped because exact procedural geometry
 communicates collision state better and keeps the initial payload small.
-
