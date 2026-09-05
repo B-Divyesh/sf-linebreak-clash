@@ -77,7 +77,7 @@ function loadRooms() {
     try {
       const room = JSON.parse(row.state);
       room.players.forEach((player) => {
-        if (player.connected) player.lastSeen = Date.now();
+        if (room.status === 'playing' && player.hasConnected) player.lastSeen = Date.now();
         player.connected = false;
         player.input = { left: false, right: false, dash: false };
       });
