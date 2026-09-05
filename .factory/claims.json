@@ -43,10 +43,10 @@
   },
   {
     "id": "settings-persist",
-    "claim": "Sound, reduced-effects, and assist settings stay on this device.",
+    "claim": "Sound, reduced-effects, assist, and Player 1 key settings stay on this device.",
     "where": "settings dialog, privacy, README",
     "test": "npm test -- --grep @claim:settings-persist",
-    "sandbox": "fresh real game; change all three controls, reload, and assert each restored value"
+    "sandbox": "fresh real game; change all four controls, reload, and assert each restored value"
   },
   {
     "id": "refresh-recovery",
@@ -84,4 +84,3 @@
     "sandbox": "fresh 390×844, 2x DPR, touch-enabled Chromium context; run solo for three seconds and measure requestAnimationFrame throughput"
   }
 ]
-

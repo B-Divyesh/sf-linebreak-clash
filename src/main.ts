@@ -66,7 +66,7 @@ function gameMarkup(): string {
         <div class="stage-actions" aria-label="Round actions">
           <button class="button compact" type="button" data-action="start-solo">Start solo</button>
           <button class="button secondary compact" type="button" data-action="start-local">Start two players</button>
-          <button class="icon-button" type="button" data-action="pause" aria-label="Pause round">Pause</button>
+          <button class="icon-button" type="button" data-action="pause" aria-label="Pause round" disabled>Pause</button>
           <button class="icon-button" type="button" data-action="settings" aria-label="Open game settings">Settings</button>
         </div>
       </div>
@@ -98,7 +98,7 @@ function gameMarkup(): string {
 
       <div class="controls-and-pings">
         <div class="control-guide">
-          <p><strong>Player 1</strong> A/D steer · Space dashes</p>
+          <p id="blue-control-guide"><strong>Player 1</strong> A/D steer · Space dashes</p>
           <p class="player-two-guide"><strong>Player 2</strong> ←/→ steer · Enter dashes</p>
         </div>
         <div class="ping-list" aria-label="Reaction pings">
@@ -140,6 +140,7 @@ function gameMarkup(): string {
             <label><span><strong>Sound</strong><small>Play short capture and collision tones.</small></span><input id="setting-sound" type="checkbox"></label>
             <label><span><strong>Reduce effects</strong><small>Remove panel movement and vibration.</small></span><input id="setting-motion" type="checkbox"></label>
             <label><span><strong>Assist mode</strong><small>Slow both trails and add collision space.</small></span><input id="setting-assist" type="checkbox"></label>
+            <label><span><strong>Player 1 keys</strong><small>Choose a comfortable steering set.</small></span><select id="setting-controls"><option value="wasd">A / D / Space</option><option value="jli">J / L / I</option></select></label>
           </div>
           <button class="button" type="button" data-action="close-settings">Save and close</button>
         </div>

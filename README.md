@@ -19,6 +19,8 @@ a product-owned realtime service; no offline demo is labelled as multiplayer.
 - Touch: use the labelled turn and dash controls below the arena.
 - Pause: press P or Escape, or choose **Pause**.
 
+Player 1 can switch to J/L for steering and I for dash in **Settings**.
+
 Solo mode supplies a deterministic bot. Local mode gives each player separate
 controls. Capturing a relay adds two points. A collision adds one point to the
 other trail. The higher score wins when the 90-second timer ends.

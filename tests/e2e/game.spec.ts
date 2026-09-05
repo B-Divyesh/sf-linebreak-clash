@@ -61,12 +61,14 @@ test('settings persist after reload and remain applied @claim:settings-persist',
   await page.getByLabel('Sound').uncheck();
   await page.getByLabel('Reduce effects').check();
   await page.getByLabel('Assist mode').check();
+  await page.getByLabel('Player 1 keys').selectOption('jli');
   await page.getByRole('button', { name: 'Save and close' }).click();
   await page.reload();
   await page.getByRole('button', { name: 'Open game settings' }).click();
   await expect(page.getByLabel('Sound')).not.toBeChecked();
   await expect(page.getByLabel('Reduce effects')).toBeChecked();
   await expect(page.getByLabel('Assist mode')).toBeChecked();
+  await expect(page.getByLabel('Player 1 keys')).toHaveValue('jli');
 });
 
 test('an active round recovers after a refresh within 20 seconds @claim:refresh-recovery', async ({ page }) => {
@@ -191,6 +193,9 @@ test('has keyboard focus, route titles, legal pages, and a designed missing page
   await expect(page.locator('h1')).toHaveCount(1);
   await page.getByRole('link', { name: 'Terms' }).click();
   await expect(page).toHaveTitle('Terms — Linebreak Clash');
+  await page.goBack();
+  await expect(page).toHaveTitle('Privacy — Linebreak Clash');
+  await expect(page.locator('h1')).toBeFocused();
   await page.goto('/a-route-that-does-not-exist');
   await expect(page).toHaveTitle('Page not found — Linebreak Clash');
   await expect(page.getByRole('link', { name: 'Return to the game' })).toBeVisible();

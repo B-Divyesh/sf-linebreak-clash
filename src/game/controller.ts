@@ -18,6 +18,7 @@ export interface Settings {
   sound: boolean;
   reduceEffects: boolean;
   assist: boolean;
+  controls: 'wasd' | 'jli';
 }
 
 interface SavedRound {
@@ -36,7 +37,7 @@ declare global {
 
 const SETTINGS_KEY = 'linebreak-clash:settings';
 const ROUND_KEY = 'linebreak-clash:round';
-const DEFAULT_SETTINGS: Settings = { sound: true, reduceEffects: false, assist: false };
+const DEFAULT_SETTINGS: Settings = { sound: true, reduceEffects: false, assist: false, controls: 'wasd' };
 
 export class GameController {
   private state: GameState;
@@ -135,6 +136,7 @@ export class GameController {
         sound: typeof value.sound === 'boolean' ? value.sound : DEFAULT_SETTINGS.sound,
         reduceEffects: typeof value.reduceEffects === 'boolean' ? value.reduceEffects : DEFAULT_SETTINGS.reduceEffects,
         assist: typeof value.assist === 'boolean' ? value.assist : DEFAULT_SETTINGS.assist,
+        controls: value.controls === 'jli' ? 'jli' : 'wasd',
       };
     } catch {
       return { ...DEFAULT_SETTINGS };
@@ -209,6 +211,7 @@ export class GameController {
     this.require<HTMLInputElement>('#setting-sound').addEventListener('change', () => this.applySettings());
     this.require<HTMLInputElement>('#setting-motion').addEventListener('change', () => this.applySettings());
     this.require<HTMLInputElement>('#setting-assist').addEventListener('change', () => this.applySettings());
+    this.require<HTMLSelectElement>('#setting-controls').addEventListener('change', () => this.applySettings());
   }
 
   private onKeyDown = (event: KeyboardEvent): void => {
@@ -231,9 +234,17 @@ export class GameController {
 
   private setKey(code: string, pressed: boolean): boolean {
     const mapping: Record<string, [PlayerId, keyof InputsByPlayer['blue']]> = {
-      KeyA: ['blue', 'left'], KeyD: ['blue', 'right'], Space: ['blue', 'dash'],
       ArrowLeft: ['coral', 'left'], ArrowRight: ['coral', 'right'], Enter: ['coral', 'dash'],
     };
+    if (this.settings.controls === 'jli') {
+      mapping.KeyJ = ['blue', 'left'];
+      mapping.KeyL = ['blue', 'right'];
+      mapping.KeyI = ['blue', 'dash'];
+    } else {
+      mapping.KeyA = ['blue', 'left'];
+      mapping.KeyD = ['blue', 'right'];
+      mapping.Space = ['blue', 'dash'];
+    }
     const action = mapping[code];
     if (!action) return false;
     this.inputs[action[0]][action[1]] = pressed;
@@ -303,6 +314,7 @@ export class GameController {
     this.require<HTMLElement>('#coral-score').textContent = String(this.state.players.coral.score);
     this.require<HTMLElement>('#coral-label').textContent = this.state.mode === 'solo' ? 'Bot' : 'Player 2';
     this.require<HTMLElement>('#fps-value').textContent = `${Math.round(this.fps || 60)} FPS`;
+    this.require<HTMLButtonElement>('[data-action="pause"]').disabled = this.state.status !== 'playing';
     const summary = `${this.state.mode === 'solo' ? 'Solo' : 'Two-player'} round. Player 1 position ${Math.round(this.state.players.blue.x)}, ${Math.round(this.state.players.blue.y)}. ${this.state.mode === 'solo' ? 'Bot' : 'Player 2'} position ${Math.round(this.state.players.coral.x)}, ${Math.round(this.state.players.coral.y)}. Score ${this.state.players.blue.score} to ${this.state.players.coral.score}. ${seconds} seconds left. ${this.state.relays.filter((relay) => relay.active).length} relays active.`;
     this.require<HTMLElement>('#game-text').textContent = summary;
     this.canvas.setAttribute('aria-label', summary);
@@ -378,6 +390,8 @@ export class GameController {
     this.require<HTMLInputElement>('#setting-sound').checked = this.settings.sound;
     this.require<HTMLInputElement>('#setting-motion').checked = this.settings.reduceEffects;
     this.require<HTMLInputElement>('#setting-assist').checked = this.settings.assist;
+    this.require<HTMLSelectElement>('#setting-controls').value = this.settings.controls;
+    this.updateControlGuide();
   }
 
   private applySettings(): void {
@@ -385,10 +399,12 @@ export class GameController {
       sound: this.require<HTMLInputElement>('#setting-sound').checked,
       reduceEffects: this.require<HTMLInputElement>('#setting-motion').checked,
       assist: this.require<HTMLInputElement>('#setting-assist').checked,
+      controls: this.require<HTMLSelectElement>('#setting-controls').value === 'jli' ? 'jli' : 'wasd',
     };
     this.state.assist = this.settings.assist;
     this.audio.setEnabled(this.settings.sound);
     document.documentElement.dataset.reduceEffects = String(this.settings.reduceEffects);
+    this.updateControlGuide();
     if (!this.isDemo) localStorage.setItem(SETTINGS_KEY, JSON.stringify(this.settings));
     this.announce('Settings saved on this device.');
   }
@@ -400,6 +416,14 @@ export class GameController {
     const saved: SavedRound = { savedAt: Date.now(), state: snapshot };
     localStorage.setItem(ROUND_KEY, JSON.stringify(saved));
     this.lastSavedAt = performance.now();
+  }
+
+  private updateControlGuide(): void {
+    const guide = this.root.querySelector<HTMLElement>('#blue-control-guide');
+    if (!guide) return;
+    guide.innerHTML = this.settings.controls === 'jli'
+      ? '<strong>Player 1</strong> J/L steer · I dashes'
+      : '<strong>Player 1</strong> A/D steer · Space dashes';
   }
 
   private sendPing(message: string): void {

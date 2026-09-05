@@ -29,13 +29,14 @@ body {
   text-rendering: optimizeLegibility;
 }
 
-button, input { font: inherit; }
+button, input, select { font: inherit; }
 a { color: inherit; text-decoration-thickness: 2px; text-underline-offset: 3px; }
 button, a { -webkit-tap-highlight-color: transparent; }
-button:focus-visible, a:focus-visible, input:focus-visible, canvas:focus-visible, [tabindex="-1"]:focus-visible {
+button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible, canvas:focus-visible, [tabindex="-1"]:focus-visible {
   outline: 4px solid var(--relay);
   outline-offset: 3px;
 }
+button:disabled { cursor: not-allowed; opacity: .48; box-shadow: none; transform: none; }
 [hidden] { display: none !important; }
 
 .visually-hidden {
@@ -190,6 +191,7 @@ dialog::backdrop { background: rgba(16, 35, 61, .75); }
 .setting-list label span { display: grid; }
 .setting-list small { color: var(--ink-muted); }
 .setting-list input { width: 28px; height: 28px; accent-color: var(--cobalt); }
+.setting-list select { min-height: 44px; max-width: 150px; padding: 6px 8px; border: 2px solid var(--ink); background: var(--white); color: var(--ink); font-weight: 800; }
 
 .how-section, .limits-section {
   display: grid;
@@ -310,4 +312,3 @@ html[data-reduce-effects="true"] .touch-controls button { transition: none; tran
   .button, .icon-button, .touch-controls button, .ping-list button { clip-path: none; }
   #arena { border: 2px solid CanvasText; }
 }
-
