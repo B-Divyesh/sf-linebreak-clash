@@ -1,5 +1,31 @@
 # Linebreak Clash handoff
 
+## Independent verification 3 — PASS
+
+Implementation reviewed: `8498e209db0f9f29641e883a3f3fd5acdac1f409`.
+Documentation baseline: `a92b2ca6b2123fd715f4517d91010f5b905fa2b9`.
+
+Fresh independent QA found **0 findings and 0 untested claims**. A clean clone
+completed `npm ci`, every one of the 30 declared claim commands, and
+`CI=1 npm run check` (10 unit tests, realtime integration, production build,
+and 26 Chromium browser tests). The static build is 15.28 KB gzip JavaScript
+and 4.94 KB gzip CSS.
+
+Fresh live desktop and phone contexts showed the game, audience, and sample
+action before scrolling. The labelled sample reset without changing real data.
+Phone play measured 59.5 FPS, offline/reduced-motion paths passed, and two
+independent live clients completed the real 90-second room, rejoined after a
+drop, received a focused polite end result, and shared a zero-score rematch.
+The product-only realtime restart check passed health, active-room SQLite
+persistence, tenant isolation, and 429/`Retry-After: 60` handling.
+
+Live route, Axe, keyboard, focus, privacy-request, legal-page, and styled-404
+checks passed. Focus contrast measured 13.528:1 on content and navigation.
+Full evidence: [verification-3.md](./verification-3.md).
+
+Known limit: Chromium was used for automated and live verification. Safari and
+Firefox remain manual release checks.
+
 ## Repair 2 — PASS
 
 Implementation SHA: `8498e209db0f9f29641e883a3f3fd5acdac1f409`.

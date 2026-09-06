@@ -1,122 +1,121 @@
-# Verify claim coverage, focus, and online results
+# Verify the 90-second relay arena and online recovery
 
 ## Verdict
 
-**PASS — all three independent-verification findings are fixed.**
+**PASS — 0 findings and 0 untested public claims.**
 
-Linebreak Clash is a 90-second relay arena for friends playing solo, on one
-keyboard, or in a private two-to-four-player room. On a fresh desktop and a
-fresh 393×727 phone context, before scrolling, the product showed:
+Linebreak Clash lets friends play a 90-second trail arena, capture relay nodes,
+and recover a dropped online player. It is for solo players, two people sharing
+a keyboard, or two to four people on separate devices. Before scrolling, fresh
+1440×900 desktop and 393×727 touch-browser visits showed the job, the audience,
+the playable arena, and **Try it with sample data** as the first action.
 
-- Job: “Capture relay nodes with a moving trail”.
-- Audience: friends who want a quick browser arena on one screen or separate
-  devices.
-- First action: “Try it with sample data”, which opens a playable seeded round.
-- The live arena, with no horizontal overflow on the phone.
+## Candidate and scope
 
-## Candidate and deployment
-
-- Implementation SHA: `8498e209db0f9f29641e883a3f3fd5acdac1f409`.
-- Static product `sf-linebreak-clash` was deployed from its fresh `dist/`.
-- Cold HTTPS assets match the local production build byte-for-byte:
+- Implementation reviewed: `8498e209db0f9f29641e883a3f3fd5acdac1f409`.
+- Documentation baseline reviewed: `a92b2ca6b2123fd715f4517d91010f5b905fa2b9`.
+- Live URL: <https://linebreak-clash.sociobot.in>.
+- The live JavaScript and CSS exactly matched a clean production build:
   `main--ddsxgKd.js` SHA-256
-  `a399d8e72c156774c21ee063cc2855baa484185da9dd89e758ae5153eb5b6f28`;
-  `main-BdThT_9_.css` SHA-256
+  `a399d8e72c156774c21ee063cc2855baa484185da9dd89e758ae5153eb5b6f28`,
+  and `main-BdThT_9_.css` SHA-256
   `47624f40b8f8a787e16890ee2e2ffba2b5dd66b3eafcb6653c9323f8930a42ba`.
-- The product-owned realtime service source was unchanged. It remains in
-  Single revision mode with exactly one minimum and maximum replica and the
-  existing `sf-linebreak-clash-realtime-data` durable mount.
 
-## Repairs
+## Clean checkout checks
 
-### Public claims have complete outcome proof
+A fresh clone at `a92b2ca`, Node 22.23.2, and npm 10.9.8 completed `npm ci`
+with no vulnerabilities. `CI=1 npm run check` passed: 10 unit tests, realtime
+authority/persistence/rate-limit integration, the production build, and 26
+Chromium browser tests. `dist/` contains 15.28 KB gzip JavaScript and 4.94 KB
+gzip CSS.
 
-The manifest now has 30 public claims, each with exactly one `@claim:<id>`
-test. Eight new claim entries cover no open chat, Copy invite, temporary-trail
-expiry, capture/collision sound, reduced effects, assist mode, preset reactions,
-and documented online payloads. The dash claim now proves its visible trail gap,
-and the sample-isolation claim now protects settings, a valid active round, an
-online key, IndexedDB, and OPFS data.
+The manifest has 30 unique entries. Source audit found exactly one matching
+`@claim:<id>` tag for every entry, with no missing, extra, or duplicate tags.
+Every declared command below was run separately from that clean checkout.
 
-The checks assert outcomes: actual clipboard data, actual visible reactions,
-Web Audio oscillator output, paired game-state movement and collision results,
-storage values, and observed WebSocket payload direction. They do not mirror
-implementation strings.
+| Claim | Command | Result and outcome evidence |
+| --- | --- | --- |
+| free-entry | `npm test -- --grep @claim:free-entry` | Pass — starts local play without identity or payment. |
+| round-end | `npm test -- --grep @claim:round-end` | Pass — accelerated 90-second run reaches a result screen. |
+| restart-reset | `npm test -- --grep @claim:restart-reset` | Pass — Play again restores 01:30 and zero scores. |
+| relay-score | `npm run test:unit -- --testNamePattern @claim:relay-score` | Pass — capture adds two points. |
+| collision-score | `npm run test:unit -- --testNamePattern @claim:collision-score` | Pass — opponent receives one point. |
+| dash-break | `npm run test:unit -- --testNamePattern @claim:dash-break` | Pass — dash crosses a trail without collision. |
+| trail-expiry | `npm run test:unit -- --testNamePattern @claim:trail-expiry` | Pass — aged trail point is removed. |
+| play-modes | `npm test -- --grep @claim:play-modes` | Pass — bot moves and separate local keys steer each player. |
+| remapped-controls | `npm test -- --grep @claim:remapped-controls` | Pass — J/L/I setting changes steering and dash. |
+| pause-controls | `npm test -- --grep @claim:pause-controls` | Pass — button, P, and Escape pause and resume the same run. |
+| settings-persist | `npm test -- --grep @claim:settings-persist` | Pass — all four settings restore after reload. |
+| sound-feedback | `npm run test:unit -- --testNamePattern @claim:sound-feedback` | Pass — capture and collision tones start. |
+| reduce-effects | `npm test -- --grep @claim:reduce-effects` | Pass — control motion and vibration are removed. |
+| assist-mode | `npm run test:unit -- --testNamePattern @claim:assist-mode` | Pass — movement slows and safe space increases. |
+| refresh-recovery | `npm test -- --grep @claim:refresh-recovery` | Pass — active play continues after refresh. |
+| demo-isolation | `npm test -- --grep @claim:demo-isolation` | Pass — real storage records remain unchanged. |
+| sample-state | `npm test -- --grep @claim:sample-state` | Pass — 4–2, three captures, trails, relays, 00:56, and reset match. |
+| reaction-pings | `npm test -- --grep @claim:reaction-pings` | Pass — preset reaction is visible locally and online. |
+| privacy-requests | `npm test -- --grep @claim:privacy-requests` | Pass — only product origins receive runtime requests. |
+| clear-saved-data | `npm test -- --grep @claim:clear-saved-data` | Pass — confirmed clearing removes all game keys. |
+| offline-play | `npm test -- --grep @claim:offline-play` | Pass — offline reload starts solo and local rounds. |
+| mobile-fps | `npm test -- --grep @claim:mobile-fps` | Pass — documented mobile profile reaches at least 50 FPS. |
+| touch-controls | `npm test -- --grep @claim:touch-controls` | Pass — touch steers and visible targets measure at least 44 px. |
+| online-room | `npm test -- --grep @claim:online-room` | Pass — four independent clients finish and rematch together. |
+| copy-invite | `npm test -- --grep @claim:copy-invite` | Pass — clipboard receives the current invite URL. |
+| no-open-chat | `npm test -- --grep @claim:no-open-chat` | Pass — no writable chat; three preset reactions only. |
+| server-authority | `npm run test:realtime` | Pass — forged score, position, collision, and clock state are rejected. |
+| online-payloads | `npm test -- --grep @claim:online-payloads` | Pass — documented browser and room-state payloads observed. |
+| online-rejoin | `npm test -- --grep @claim:online-rejoin` | Pass — reconnect succeeds just before 20 seconds. |
+| room-persistence | `npm run test:realtime` | Pass — SQLite room survives restart and expires after 24 hours. |
 
-### Focus is visible on every surface
+## Live game and sample checks
 
-Content focus uses `#10233d` ink against the paper surface. Header/footer focus
-uses `#f3eddf` paper against navy. A fresh live primary action measured
-**13.53:1**, exceeding the 3:1 focus-indicator requirement. Browser regression
-checks cover both paper content and navy navigation.
+- The one-click sample opened a populated 4–2 round with the persistent
+  **Demo — sample data, nothing is saved** label. Reset restored the seeded
+  state. Preloaded real settings were unchanged.
+- A deterministic local run reached an actual result screen; its restart
+  restored the full round state.
+- Fresh phone play had no horizontal overflow and measured 59.5 FPS. Touch
+  controls worked. Offline reload started a solo round after service-worker
+  control. Reduced-motion controls had no transition movement.
+- Two fresh, independent live browser contexts created and joined one room,
+  started a full real 90-second round, rejoined a dropped client, and produced
+  the same end result: **“Lin wins.”** The end panel used a polite live region
+  and moved focus to **Round complete** for both clients. The host then started
+  a shared rematch with scores reset to zero.
+- End-screen evidence: `/work/.evidence/linebreak-clash/online-end-live.png`.
+  Live browser evidence: `/work/.evidence/linebreak-clash/live-browser.json`.
+- Product-only backend verification passed: `/health` returned 200 after a
+  restart; a two-player active room remained `playing`; a credential from one
+  room could not join another; request allowance returned HTTP 429 with
+  `Retry-After: 60`.
 
-### Online results announce and receive focus
+## Accessibility, routes, privacy, and errors
 
-Online status and result text are polite atomic live regions. When the server
-ends a round, the visible result panel is announced and focus moves to its
-“Round complete” heading for every player, including non-hosts. A fresh live
-two-browser 90-second round ended with “Lin wins.” and proved the live region
-and focused heading before a shared rematch.
+- Fresh live Axe checks found zero serious or critical violations on `/`,
+  `/demo/`, `/online/`, `/privacy/`, `/terms/`, and `/not-a-page`.
+- Those routes had `lang="en"`, exactly one `h1`, one `main`, and their correct
+  titles. The styled missing route returned the expected HTTP 404 and a way
+  back; it is not a finding.
+- Keyboard focus was visible on live content and navigation. The primary
+  sample action and navigation focus contrast both measured 13.528:1.
+- Live run recorded zero console errors. Its only runtime request origins were
+  the static product and the product-owned realtime service. No analytics,
+  advertising, or third-party origin was observed.
+- Normal paths, invalid room-code and missing-room errors, near-boundary
+  rejoin, refresh, offline recovery, reset, 200% text reflow, reduced motion,
+  legal pages, and 404 handling are covered by the clean browser suite and
+  live route checks.
 
-## Clean verification
+## Earlier findings
 
-After `npm ci` with Node 22 and npm 10:
-
-```sh
-CI=1 npm run check
-```
-
-passed with 10 unit tests, realtime authority/persistence/rate-limit integration,
-a production build, and 26 Chromium browser tests. `dist/` contains 15.28 KB
-gzip JavaScript and 4.94 KB gzip CSS.
-
-Every one of the 30 commands in `.factory/claims.json` was then run separately
-from the same clean setup. All passed, including the separately declared
-`server-authority` and `room-persistence` realtime commands. A manifest audit
-found 30 entries, no missing tags, no extra tags, and one occurrence of every
-claim tag.
-
-## HTTPS checks
-
-`node scripts/verify-live.mjs` passed against the cold HTTPS product:
-
-- sample score 4–2, persistent “Demo — sample data, nothing is saved” label,
-  exact reset, and unchanged real settings;
-- phone rendering at 60.003 FPS, offline reload, and reduced motion;
-- two independent real browsers completed the real 90-second room, rejoined a
-  dropped browser, saw the same end result, and reset scores on rematch;
-- no console errors and requests only to the static product and its
-  product-owned room service.
-
-`node scripts/verify-realtime-live.mjs` passed after cycling only the current
-product revision: health 200, isolated room credentials, active-room persistence
-through restart, and a live 429 with `Retry-After: 60`.
-
-Fresh Playwright Axe checks against `/`, `/demo/`, `/online/`, `/privacy/`,
-`/terms/`, and `/not-a-page` found zero serious or critical findings. Each real
-route returned 200 with its expected title, `lang="en"`, one `main`, one `h1`,
-and image alternatives. The styled `/not-a-page` response returned the expected
-HTTP 404 and is not a defect. The repository has no `verify-url.sh`; the
-installed Playwright Axe integration was used instead of the unavailable
-standalone Chrome Axe CLI.
-
-## Earlier finding disposition
-
-| Earlier issue | Current disposition |
+| Earlier finding | Current disposition |
 | --- | --- |
-| Verification 1: four-player completion, server authority, near-limit rejoin, sample state | Still passing. |
-| Verification 1: Escape pause and 44 px links | Still passing. |
-| Verification 2: ten incomplete/unlisted claim components | Fixed with 30 manifest claims and separate outcome commands. |
-| Verification 2: 1.09:1 focus outline | Fixed; live content focus is 13.53:1. |
-| Verification 2: online end result not announced or focused | Fixed and verified in a real live round. |
-| Offline, refresh, 200% text, mobile first screen, SQLite restart, 404 | Still passing. |
+| Verification 1: incomplete four-player, authority, near-limit rejoin, and sample proof | Fixed and passing under separate tagged commands. |
+| Verification 1: Escape pause and sub-44 px touch targets | Fixed and passing under keyboard and mobile target checks. |
+| Verification 2: incomplete or unlisted public claims | Fixed: 30 outcome-based claims, all individually passed. |
+| Verification 2: 1.09:1 focus outline | Fixed: fresh live measurement is 13.528:1. |
+| Verification 2: online result lacked announcement and focus | Fixed: live two-client end screen announced and focused. |
 
-## Known limits
+## Known limit
 
-- The researched 95% field reconnect measure is not behavioral telemetry. The
-  product intentionally does not collect that telemetry; deterministic,
-  near-boundary, and live rejoin checks remain the available evidence.
-- The researched median of four rounds per group is not measured because the
-  product has no behavioral analytics.
-- Automated browser coverage is Chromium. Safari and Firefox still need a
-  manual release pass before making a cross-browser promise.
+Chromium is the automated and live browser used here. Safari and Firefox remain
+manual release checks; the product does not claim cross-browser verification.
