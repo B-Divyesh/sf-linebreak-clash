@@ -1,5 +1,52 @@
 # Linebreak Clash handoff
 
+## Repair 3 — PASS
+
+Runtime implementation deployed: `528bba9e08c63aa507e34853f9ffc8f0c71e90f4`.
+The later test-only verification source is
+`358df09809aa154470135868711666b019c3866c`; it does not alter `dist/`.
+
+This repair closes strict review 2 F-01. A populated two-player online room
+previously overflowed a 393 px phone by up to 116 px with valid 20-character
+names. Phone roster cards now use one column at 520 px and below, can shrink,
+and wrap names inside the card. The regression starts a real room in two 393
+px clients using `Alexandra-Team-Alpha` and `Christopher-Player-2`; both live
+documents remain 393 px wide, both player cards stay within 25–368 px, and
+each shows its name, connection state, and score.
+
+The sample-isolation outcome test was made stable by freezing the real saved
+round before entering the sample. It now proves that demo settings and Reset
+demo cannot change saved local storage, IndexedDB, or OPFS data.
+
+The static build was deployed to `sf-linebreak-clash`. Cold HTTPS JS and CSS
+hashes match the fresh build: 15.28 KB gzip JS and 4.96 KB gzip CSS. The
+realtime service was not redeployed; its durable single-replica SQLite setup
+was preserved. A product-only restart check passed health, active-room
+recovery, room isolation, and 429/`Retry-After: 60` handling.
+
+From a fresh clone with Node 22.23.2 and npm 10.9.8, `npm ci` and
+`CI=1 npm run check` passed (10 unit tests, room-service integration, build,
+and 26 Chromium tests). All 30 individually declared claim commands then
+passed with fail-fast handling.
+
+Fresh live desktop and 393×727 phone contexts showed the job, audience, arena,
+and **Try it with sample data** before scrolling. The one-click 4–2 sample
+kept its demo label, reset exactly, and left real settings unchanged. An
+isolated live run measured 59.5 FPS, passed offline and reduced-motion paths,
+and completed a real two-client 90-second room with rejoin, an announced
+focused result, and a shared rematch. All six live routes had zero serious or
+critical Axe findings; the expected styled 404 is deliberate. Runtime requests
+were limited to the static product and its product-owned room service.
+
+Full verification: [verification-4.md](./verification-4.md). The plain
+verb-first catalog description is in `.factory/catalog-description.txt` and
+copied to `/work/.evidence/catalog-description.txt`.
+
+Known limits: Chromium was used for automated and live checks; Safari and
+Firefox are not claimed. The research field-reconnect and median-round targets
+are not measured because the product intentionally has no behavioral
+analytics.
+
 ## Strict review 2 — FAIL
 
 Implementation reviewed: `8498e209db0f9f29641e883a3f3fd5acdac1f409`.
