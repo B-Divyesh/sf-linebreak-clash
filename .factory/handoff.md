@@ -1,5 +1,47 @@
 # Linebreak Clash handoff
 
+## Independent verification 4 — PASS
+
+Fresh independent QA at checkout
+`6bdda6f6ccebcbcbeeefa07ac87c4c5866715aae` reviewed runtime implementation
+`528bba9e08c63aa507e34853f9ffc8f0c71e90f4`. The intervening
+`358df09809aa154470135868711666b019c3866c` changes only test setup, and
+`ab2f3efafe0dff5b26b6a38b33eab31daffe49bb` is the prior verification-document
+baseline. Live JavaScript and CSS match the fresh build byte-for-byte.
+
+Verdict: **PASS — 0 findings and 0 untested public claims.** `npm ci` reported
+zero vulnerabilities. All 30 declared claim commands passed separately, and
+`CI=1 npm run check` passed 10 unit tests, realtime integration, the production
+build, and 26 Chromium tests. The build contains 15.28 KB gzip JavaScript and
+4.96 KB gzip CSS.
+
+Fresh desktop and phone checks showed the job, audience, sample action, and
+playable arena before scrolling. The labelled 4–2 sample reset without changing
+real data. A deterministic run reached an actual result and restarted at 01:30
+and 0–0. Phone play measured 59.50 FPS. Offline, service-worker update,
+reduced-motion, touch, keyboard, focus, 200% reflow, clear-data, invalid-room,
+and route recovery checks passed.
+
+Two independent live clients completed a real 90-second room, received the
+same announced and focused result, and shared a zero-score rematch. A separate
+guest rejoined after 19.15 seconds. The mobile repair was measured in two fresh
+393 px clients with two 20-character names: each document stayed 393 px wide,
+both 343 px rosters stayed within their boxes, and every card remained between
+25 px and 368 px.
+
+The product-owned realtime service passed health after its current revision
+was cycled, active-room SQLite recovery, room credential isolation, and HTTP
+429 with `Retry-After: 60`. All five real routes and the designed 404 had zero
+Axe violations. Ordinary links returned 200; the deliberate missing route
+correctly returned 404. Mobile Lighthouse scored 100 in all four categories
+with 1.10 s LCP, 0 CLS, and 0 ms TBT.
+
+Full evidence and every earlier-finding disposition are in
+[verification-4.md](./verification-4.md). Chromium was used for automated and
+live verification. Safari and Firefox are not claimed. The brief's field
+reconnect and median-round targets remain unmeasured without behavioral
+analytics.
+
 ## Repair 3 — PASS
 
 Runtime implementation deployed: `528bba9e08c63aa507e34853f9ffc8f0c71e90f4`.
