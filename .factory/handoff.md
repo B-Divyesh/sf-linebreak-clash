@@ -1,5 +1,40 @@
 # Linebreak Clash handoff
 
+## Strict review 3 — PASS
+
+Fresh strict review at documentation baseline
+`2867b537b914ec8f96ad79bc2c3ddc75b2e0cc66` reviewed runtime implementation
+`528bba9e08c63aa507e34853f9ffc8f0c71e90f4`. The intervening `358df09` changes
+only test setup. Live JavaScript and CSS match the clean build byte-for-byte.
+
+Verdict: **PASS — 0 findings of every severity and 0 untested public claims.**
+All 30 declared claim commands passed separately. `CI=1 npm run check` passed
+10 unit tests, the SQLite/realtime integration, the production build, and 26
+Chromium tests. The build contains 15.28 KB gzip JavaScript and 4.96 KB gzip
+CSS.
+
+Fresh desktop and phone contexts showed the job, audience, sample action, and
+playable arena before scrolling. The labelled 4–2 sample reset exactly without
+changing seeded real data. A deterministic local run reached **The bot wins.**
+at 17–77 and restarted at 01:30 and 0–0. Phone touch play measured 60.00 FPS.
+Offline reload, reduced motion, keyboard focus, persistent settings, invalid
+room recovery, 200% text reflow, and privacy clearing passed.
+
+Two independent live clients completed a real 90-second room. Only the
+product-owned current revision was cycled; the active room recovered, and the
+guest separately rejoined after 19.15 seconds. Both clients showed
+**Christopher-Player-2 wins.**, announced and focused the result, and entered a
+zero-score rematch. Two 20-character player names fit the 393 px phone with no
+overflow. Live backend health, room credential isolation, and 429 with
+`Retry-After: 60` passed.
+
+All five real routes and the designed 404 had zero Axe violations. Runtime
+requests stayed on the static product and its product-owned room service.
+Mobile Lighthouse scored 100 in all four categories with 1.119 s LCP, 0 CLS,
+and 0 ms TBT. Full evidence and every earlier-finding disposition are in
+[review-3.md](./review-3.md). Chromium was used; Safari and Firefox are not
+claimed. No product code was changed.
+
 ## Independent verification 4 — PASS
 
 Fresh independent QA at checkout
