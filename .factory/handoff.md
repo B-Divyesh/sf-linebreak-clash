@@ -1,5 +1,53 @@
 # Linebreak Clash handoff
 
+## Repair 2 — PASS
+
+Implementation SHA: `8498e209db0f9f29641e883a3f3fd5acdac1f409`.
+The separate documentation SHA is recorded in the follow-up handoff pointer
+commit. Full evidence is in [verification-3.md](./verification-3.md).
+
+This repair closes the three failures from independent verification 2:
+
+1. `.factory/claims.json` now has 30 public claims. Every claim has exactly one
+   outcome-based tagged test, and all 30 documented commands pass separately.
+   The repaired coverage includes Copy invite, no open chat, temporary trails,
+   dash gaps, sound feedback, reduced effects, assist mode, local/shared
+   reactions, full demo storage isolation, and accurate online payloads.
+2. Content focus now uses ink on paper while header/footer focus uses paper on
+   navy. Fresh HTTPS content focus measures 13.53:1.
+3. Async online results use polite atomic live regions and move focus to the
+   result heading. A fresh live two-browser 90-second round proved the
+   announcement, focus, dropped-client rejoin, and shared rematch.
+
+The static app was built and deployed to `sf-linebreak-clash`; its cold live JS
+and CSS hashes match local `dist/`. The realtime image did not change. Its
+single-replica mode, Azure File `/data` mount, probes, and scale bounds were
+preserved. A product-only live restart check confirmed health, isolated room
+credentials, SQLite recovery, and 429/`Retry-After` behavior.
+
+From a clean checkout, run:
+
+```sh
+npm ci
+CI=1 npm run check
+```
+
+The final run passed 10 unit tests, realtime integration, production build, and
+26 Chromium browser tests. All 30 manifest commands were then run separately
+and passed. Build output is 15.28 KB gzip JavaScript and 4.94 KB gzip CSS.
+
+Fresh desktop and 393×727 phone contexts showed the job, audience, sample
+action, and live arena before scrolling. The sample stayed labelled, reset to
+4–2, and did not change real settings. Live route and Axe checks passed for
+all five product routes and the expected styled 404. No console errors occurred
+on the sample, online, or legal flows.
+
+The static product is free. No billing offer or external payment dependency is
+advertised or required.
+
+Known limits remain: field reconnect rate and median rounds are intentionally
+unmeasured without analytics; automated coverage is Chromium only.
+
 ## Independent verification 2 — FAIL
 
 Implementation candidate: `54b09c184e48dffdba3b2e03a4124be0f198edb5`.

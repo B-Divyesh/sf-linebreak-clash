@@ -86,6 +86,10 @@ await guest.waitForFunction(() => document.querySelector('#online-connection')?.
 assert.equal((await guest.locator('#room-code').innerText()).trim(), roomCode);
 await host.locator('#online-end').waitFor({ state: 'visible', timeout: 100_000 });
 await guest.locator('#online-end').waitFor({ state: 'visible', timeout: 10_000 });
+assert.equal(await host.locator('#online-result').getAttribute('aria-live'), 'polite');
+assert.equal(await guest.locator('#online-result').getAttribute('aria-live'), 'polite');
+await host.waitForFunction(() => document.activeElement?.id === 'online-end-title');
+await guest.waitForFunction(() => document.activeElement?.id === 'online-end-title');
 const hostResult = (await host.locator('#online-result').innerText()).trim();
 const guestResult = (await guest.locator('#online-result').innerText()).trim();
 assert.match(hostResult, /wins\.|draw\./);
@@ -100,7 +104,7 @@ const allowedOrigins = new Set([origin, realtimeOrigin]);
 assert.ok(requests.every((url) => allowedOrigins.has(new URL(url).origin)), 'Unexpected runtime request origin');
 assert.deepEqual(errors, []);
 
-const result = { desktopFirstScreen: true, phoneFirstScreen: true, phoneFps, sampleScore: '4–2', sampleReset: true, realSettingsUnchanged: true, offlineReload: true, reducedMotion: true, roomCodeLength: roomCode.length, independentClients: 2, rejoinedDuringRound: true, liveRoundDurationSeconds: 90, endResult: hostResult, rematchReset: true, consoleErrors: errors.length, requestOrigins: [...new Set(requests.map((url) => new URL(url).origin))] };
+const result = { desktopFirstScreen: true, phoneFirstScreen: true, phoneFps, sampleScore: '4–2', sampleReset: true, realSettingsUnchanged: true, offlineReload: true, reducedMotion: true, roomCodeLength: roomCode.length, independentClients: 2, rejoinedDuringRound: true, liveRoundDurationSeconds: 90, endResult: hostResult, onlineResultAnnounced: true, onlineResultFocused: true, rematchReset: true, consoleErrors: errors.length, requestOrigins: [...new Set(requests.map((url) => new URL(url).origin))] };
 await writeFile(`${evidence}/live-browser.json`, `${JSON.stringify(result, null, 2)}\n`);
 console.log(JSON.stringify(result));
 
