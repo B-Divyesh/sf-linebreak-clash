@@ -1,146 +1,120 @@
 # Linebreak Clash handoff
 
-## Independent verification 1 — FAIL
+## Repair verification — PASS
 
-Independent verification on 6 September 2026 reviewed implementation candidate
-`23e5b9ef0cee5d9d17f6faa9ade8e6facfb36032` and the matching live static
-assets. The verification documentation commit is
-`44dca4be7813c0c76412aa466d09e6ad118d55dd`. Product code was not changed.
+Implementation SHA: `54b09c184e48dffdba3b2e03a4124be0f198edb5`.
 
-The game, sample, complete live 90-second two-client round, mid-round rejoin,
-rematch, offline play, mobile performance, SQLite restart persistence, room
-isolation, and live 429/`Retry-After` behavior passed. All 15 declared claim
-commands passed individually, and `npm run check` passed 17/17 browser and 8/8
-unit tests. Lighthouse remained 100 in all four categories.
+This repair resolves all three findings from independent verification 1:
 
-The verdict is still **FAIL** because independent QA found three issues:
+1. The claim manifest now has 22 public claims. Each has exactly one tagged,
+   outcome-based test. Coverage now includes four-player room completion,
+   server authority against forged client state, a reconnect at 19.15 seconds,
+   the complete sample state and reset, pause shortcuts, remapped keys,
+   collision scoring, clearing every saved key, and mobile touch targets.
+2. Escape now prevents the native dialog cancel default before opening the
+   pause dialog. Escape, P, and the Pause button all pause and resume a live
+   round without resetting it.
+3. Header, banner, in-page, and footer links now have 44 by 44 px targets.
+   Fresh phone checks cover the game, sample, online, privacy, and terms pages.
 
-1. Major: public claims are missing from `.factory/claims.json`, and five
-   promise components lack complete claim-test proof.
-2. Minor: Escape does not pause an active round, although P and the Pause
-   button work.
-3. Minor: several phone navigation and text-link targets are under 44×44 px.
+The repair also fixes the seeded sample run: supplied trails now start behind
+each player, rather than under their spawn point, so the sample stays populated
+and playable instead of immediately self-colliding.
 
-See [verification-1.md](./verification-1.md) for reproduction steps, claim
-results, evidence, and earlier-finding dispositions. Fresh evidence is under
-`/work/.evidence/linebreak-clash/`. The full report is also copied to
-`/work/.evidence/qa-report.md`.
+The former public word “random” for room codes was removed from README copy.
+The service continues to use cryptographic bytes; its integration run confirms
+17 distinct valid room codes, but a browser outcome test cannot prove entropy.
 
-## Release
+## What was deployed
 
-Linebreak Clash is a free browser arena for solo play, two players on one
-keyboard, or two to four players in a private online room. Each round lasts 90
-seconds. Players steer temporary trails, capture numbered relay nodes, and use
-a dash to cross trails. The live product is
-`https://linebreak-clash.sociobot.in`.
+- Static app: built `dist/` deployed to `sf-linebreak-clash`. The cold live
+  page references `main-s9MjsHDY.js`; its SHA-256 matches the local build.
+- Realtime app: image
+  `sociobotregistry.azurecr.io/sf-linebreak-clash-realtime:54b09c184e48`
+  deployed to `sf-linebreak-clash-realtime--0000005`.
+- The realtime deployment remains Single revision mode with min/max replicas
+  both one, the existing `/data` mount, and
+  `sf-linebreak-clash-realtime-data`. No storage, environment, probe, or scale
+  configuration was changed.
+- `.factory/catalog-description.txt` remains the plain verb-first 83-character
+  description and was copied to `/work/.evidence/catalog-description.txt`.
 
-- Static implementation SHA: `5ff1528`.
-- Realtime implementation SHA and deployed image: `19f41ed`
-  (`sf-linebreak-clash-realtime:19f41ede5a77`).
-- Claims and README SHA: `458a251`.
-- Live verification artifacts SHA: `54d8881`.
-- The final handoff commit is the repository HEAD containing this file.
+## Verification from a clean checkout
 
-## What shipped
-
-- A deterministic fixed-step Canvas 2D arena with solo and local two-player
-  modes, keyboard and touch input, remappable Player 1 keys, assist mode,
-  persistent sound and motion settings, pause, refresh recovery, win/loss
-  screens, and immediate restart.
-- Private online rooms with random eight-character codes, two-to-four-player
-  capacity, server-authoritative movement and collision, preset reactions,
-  shared results, rematches, and a 20-second reconnect window.
-- A product-owned `sf-linebreak-clash-realtime` service. It runs one replica,
-  mounts `sf-linebreak-clash-realtime-data` at `/data`, and stores room state
-  as a SQLite database. Inactive rooms expire after 24 hours.
-- A one-click seeded sample at `/demo/`. It starts 4–2 with 56 seconds left,
-  keeps a persistent sample label, resets deterministically, and never touches
-  real game storage.
-- Offline solo/local play, privacy and terms pages, a designed 404, route
-  titles and metadata, security headers, sitemap, robots file, favicon, social
-  image, skip link, focus states, reduced motion, and 200% text reflow.
-- An original screen-printed transit-blueprint visual system. Every visual is
-  hand-authored SVG or procedural Canvas geometry; no external image, font, or
-  script is loaded.
-
-## Verification
-
-From a fresh clone of `19f41ed`, Node.js 22 and npm 10 were the only
-prerequisites. `npm ci` reported zero vulnerabilities. Every command in
-`.factory/claims.json` passed individually. The aggregate checks also passed:
+Prerequisites: Node.js 22 and npm 10.
 
 ```sh
 npm ci
-npm run build
-npm run test:unit
-npm run test:realtime
-CI=1 npm test
+CI=1 npm run check
 ```
 
-Results:
+`npm ci` completed with zero vulnerabilities. `CI=1 npm run check` passed:
 
-- Build: `dist/` created; initial JavaScript 15.13 KB gzip and CSS 4.88 KB
-  gzip.
-- Unit: 8/8 passed.
-- Realtime integration: four players accepted, fifth rejected, 20/20 transient
-  reconnects succeeded, active SQLite room survived restart, 24-hour expiry
-  passed, and rate limiting returned 429 with `Retry-After: 60`.
-- Browser: 17/17 passed. This includes deterministic end state, restart reset,
-  every play mode, settings, local refresh recovery, sample isolation, offline
-  reload, mobile input/FPS, two independent online clients, online rejoin,
-  invalid input, legal routes, focus, reduced motion, and axe integration.
-- Fresh 320 px browser at 200% text: no horizontal overflow; the sample action
-  remained visible.
+- 8/8 deterministic unit tests;
+- realtime integration: 17 valid distinct room codes, four accepted players,
+  fifth-player 409, 20/20 reconnects, forged score/position/collision/clock
+  rejection, SQLite restart persistence, 24-hour expiry, health, and 429 with
+  `Retry-After: 60`;
+- build: `dist/` created; JavaScript 15.16 KB gzip and CSS 4.91 KB gzip;
+- 20/20 Chromium browser tests, including a full four-client 90-second room
+  in the accelerated sandbox and a real-time 19.15-second dropped-client
+  recovery.
 
-Live verification on 5 September 2026:
+Every one of the 22 commands declared in `.factory/claims.json` was also run
+separately after `npm ci`; all passed. A manifest audit confirms exactly one
+`@claim:<id>` outcome-test tag for each claim.
 
-- `/`, `/demo/`, `/online/`, `/privacy/`, and `/terms/` returned 200. An
-  unknown route returned the expected designed 404.
-- The factory URL check reported a 643 ms load, one `h1`, `lang="en"`, a main
-  landmark, labelled buttons, and no console errors.
-- Axe CLI reported zero violations on all five real routes and the 404.
-- Lighthouse mobile: Performance 100, Accessibility 100, Best Practices 100,
-  SEO 100; LCP 1.17 s, CLS 0, TBT 0 ms.
-- Fresh phone: arena top 694 px in a 393×727 viewport, no horizontal overflow,
-  and 60.0 measured FPS. Navigation text is 16 px.
-- Fresh desktop sample: score 4–2, persistent sample label, deterministic reset,
-  and unchanged real settings.
-- Full live online run: two independent clients completed an actual 90-second
-  round with the same result (`Lin wins.`); the guest rejoined during play and
-  the rematch reset both scores.
-- Live backend: `/health` returned 200; an active two-player room survived a
-  complete revision stop/start; a room key was rejected in a different room;
-  the live request limit returned 429 with `Retry-After: 60`.
-- Final room-service state: revision `sf-linebreak-clash-realtime--0000004`,
-  healthy, one replica, durable `/data` mount.
+## Live verification
 
-Evidence is in `.factory/evidence/`. The full live scripts are
-`scripts/verify-live.mjs` and `scripts/verify-realtime-live.mjs`; the latter is
-operator-only because it restarts the product revision and deliberately reaches
-the rate limit.
+Fresh desktop and 393 by 727 touch contexts showed, before scrolling:
 
-## Deployment note
+- Job: “Capture relay nodes with a moving trail”.
+- Audience: friends playing on one screen or separate devices.
+- First action: “Try it with sample data”.
+- The live arena was visible in both contexts; phone had no horizontal
+  overflow and no visible link or button smaller than 44 by 44 px.
 
-The first native Node SQLite startup exposed that this Azure Files mount does
-not support its filesystem-locking mode. No player traffic reached those
-revisions. The final service uses SQLite compiled to WebAssembly and atomically
-serializes a standard SQLite file at `/data/linebreak-clash-v3.sqlite`. The
-integration test reopens that file with Node's native SQLite driver, proving the
-format and restart persistence. Two unused pre-live database files remain on
-the same product volume; they contain no live room data.
+`node scripts/verify-live.mjs` passed against HTTPS:
 
-The container deployment wrapper checks `/` and therefore keeps polling on the
-service's deliberate 404 even after deployment. The wrapper was stopped only
-after the revision was healthy and `/health` returned 200. The 404 is expected
-for this API, not a failed route.
+- sample score 4–2, persistent **Demo — sample data, nothing is saved** label,
+  deterministic reset, and unchanged real settings;
+- phone 59.5 FPS, offline solo reload, and reduced-motion behavior;
+- a real two-client, 90-second online room with a dropped-client rejoin,
+  shared **Lin wins.** end screen, and a zero-score rematch;
+- no console errors and requests only to the static product origin and its
+  product-owned realtime origin.
 
-## Known gaps and next checks
+Fresh live route checks found 200 for `/`, `/demo/`, `/online/`, `/privacy/`,
+and `/terms/`; `/not-a-page` returned the expected styled HTTP 404. Every
+route had its expected title, `lang="en"`, one `h1`, and one `main` landmark.
+Live Axe checks found zero serious or critical issues. The browser’s normal
+console message for the deliberate 404 was classified as expected; there were
+no unexpected console errors.
 
-- The researched 95% reconnect target is supported by 20/20 sandbox reconnects
-  and one successful live mid-round rejoin. It is not yet a field reliability
-  measurement.
-- The target median of four rounds cannot be measured without collecting usage
-  data. Rematches are implemented, but privacy defaults intentionally exclude
-  behavioral analytics.
-- Automated browser coverage uses Chromium. Manual release checks should also
-  cover current Safari and Firefox before making cross-browser claims.
+`node scripts/verify-realtime-live.mjs` passed after cycling only the existing
+product revision: health 200, independent room isolation, active-room restart
+persistence with two restored players, and live 429 with `Retry-After: 60`.
+
+Evidence: `/work/.evidence/linebreak-clash/live-browser.json` and
+`/work/.evidence/linebreak-clash/online-end-live.png`.
+
+## Earlier findings disposition
+
+| Earlier issue | Current disposition |
+| --- | --- |
+| Incomplete claims coverage | Fixed: manifest and outcome tests expanded; all commands pass. |
+| Escape pause | Fixed and tested through an active round. |
+| Small mobile links | Fixed and measured on every public route. |
+| Offline/recovery, remapped keys, touch, P pause, reflow | Still passing. |
+| SQLite startup, durable restart, rejoin after restart | Still passing locally and live. |
+| Arena below the phone fold | Still visible at 393 by 727. |
+
+## Known limits
+
+- The researched 95% field reconnect target is supported by deterministic
+  20/20 local reconnects, a near-boundary browser check, and a live rejoin. It
+  is not yet a field reliability measurement.
+- The target median of four rounds per group cannot be measured without
+  behavioral analytics, which the product intentionally does not collect.
+- Automated and live checks use Chromium. Current Safari and Firefox still
+  need a manual release pass before making a cross-browser claim.
