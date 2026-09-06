@@ -1,5 +1,34 @@
 # Linebreak Clash handoff
 
+## Strict review 2 — FAIL
+
+Implementation reviewed: `8498e209db0f9f29641e883a3f3fd5acdac1f409`.
+Documentation baseline: `19ef1b5dab46fa94e04d7f3e004d4ded14cb97a4`.
+
+Fresh strict review found **1 minor finding and 0 untested public claims**. A
+populated online room overflows a 393 px phone viewport. Default player names
+produce 6 px of document overflow. Two allowed 20-character names produce
+116 px of overflow and clip the second player's name, state, score, and card.
+The current mobile test checks `/online/` before players join, so it misses the
+populated layout.
+
+All other gates passed from a clean clone. `npm ci` reported zero
+vulnerabilities. Every one of the 30 declared claim commands passed separately.
+`CI=1 npm run check` passed 10 unit tests, realtime integration, the production
+build, and 26 Chromium tests. The live build matched local assets byte-for-byte.
+
+A fresh desktop host and phone guest completed a real 90-second round. The
+phone used touch input, rejoined after 19.1 seconds offline, received the shared
+focused result, and joined a zero-score rematch. The sample loaded at 4–2,
+remained labelled, reset, and did not change real settings. The product-only
+backend passed health, isolated room credentials, active-room restart
+persistence, and 429/`Retry-After: 60` checks. Live route, Axe, privacy-request,
+keyboard, focus, offline, reduced-motion, legal-page, and designed-404 checks
+passed. Lighthouse scored 100 in all four categories.
+
+Full evidence and reproduction steps: [review-2.md](./review-2.md). No product
+code was changed during this review.
+
 ## Strict review 1 — PASS
 
 Implementation reviewed: `8498e209db0f9f29641e883a3f3fd5acdac1f409`.
