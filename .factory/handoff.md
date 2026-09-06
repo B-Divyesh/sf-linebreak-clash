@@ -4,6 +4,7 @@
 
 Implementation candidate: `54b09c184e48dffdba3b2e03a4124be0f198edb5`.
 Documentation baseline: `87d78ccc3eaa8110241d304bf358f6b9115b06d0`.
+Verification 2 report SHA: `3cecff599127cfede39f474872d6e8a869e4033b`.
 
 Fresh independent QA found 3 issues: one major claims-contract gap covering ten
 untested or incompletely tested public promise components, a 1.09:1 content
