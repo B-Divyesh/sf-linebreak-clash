@@ -27,7 +27,8 @@ no localStorage, IndexedDB, or OPFS entry, and it does not read or write the
 normal `linebreak-clash:*` localStorage keys. Reloading the sample recreates it
 from the bundled seed.
 
-The outcome-based `@claim:demo-isolation` browser test preloads a real setting,
-enters the sample, changes a sample setting, resets, and proves the real value
-and storage key list remain unchanged.
-
+The outcome-based `@claim:sample-state` browser test proves the 4–2 score,
+three captures, both visible trail sets, three relays, 56-second clock, and
+exact reset state. `@claim:demo-isolation` preloads a real setting, changes a
+sample setting, resets, and proves the real value and storage key list remain
+unchanged.

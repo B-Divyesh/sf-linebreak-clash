@@ -23,7 +23,7 @@ export default defineConfig({
       timeout: 120_000,
     },
     {
-      command: 'PORT=8787 ROUND_DURATION=4 LINEBREAK_DATA=/tmp/linebreak-clash-playwright.sqlite node realtime/server.mjs',
+      command: 'PORT=8787 ROUND_DURATION=90 LINEBREAK_TIME_SCALE=24 LINEBREAK_TIME_SCALE_DELAY_MS=20000 LINEBREAK_DATA=/tmp/linebreak-clash-playwright.sqlite node realtime/server.mjs',
       url: 'http://127.0.0.1:8787/health',
       reuseExistingServer: !process.env.CI,
       timeout: 30_000,

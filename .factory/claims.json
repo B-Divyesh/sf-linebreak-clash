@@ -28,6 +28,13 @@
     "sandbox": "seeded core state; move a player through an active relay and assert an observable two-point increase and relay turnover"
   },
   {
+    "id": "collision-score",
+    "claim": "A trail collision gives one point to the other player.",
+    "where": "README game rules",
+    "test": "npm run test:unit -- --testNamePattern @claim:collision-score",
+    "sandbox": "seeded core state; drive Player 1 into Player 2's existing trail and assert Player 2 gains exactly one point while Player 1 respawns"
+  },
+  {
     "id": "dash-break",
     "claim": "A dash briefly crosses a trail without a collision.",
     "where": "how to play, README",
@@ -40,6 +47,20 @@
     "where": "game controls, release scope, README",
     "test": "npm test -- --grep @claim:play-modes",
     "sandbox": "fresh real game; observe bot movement, switch to local mode, then assert A and Arrow Left turn different players"
+  },
+  {
+    "id": "remapped-controls",
+    "claim": "Player 1 can use J and L to steer and I to dash after changing the key setting.",
+    "where": "game settings, README",
+    "test": "npm test -- --grep @claim:remapped-controls",
+    "sandbox": "fresh real game; choose J/L/I, start a round, and assert J changes heading while I starts a dash"
+  },
+  {
+    "id": "pause-controls",
+    "claim": "An active local round pauses with the Pause button, P, or Escape and resumes without resetting.",
+    "where": "game controls, README",
+    "test": "npm test -- --grep @claim:pause-controls",
+    "sandbox": "fresh real game; use all three pause entries, assert the native pause dialog and paused state, then resume the same round"
   },
   {
     "id": "settings-persist",
@@ -63,11 +84,25 @@
     "sandbox": "preseed real settings; enter sample in one click, change settings, reset, and assert the real value and demo-key list are unchanged"
   },
   {
+    "id": "sample-state",
+    "claim": "The sample starts at 4–2 after three captures with visible trails, three relays, and 56 seconds left; Reset demo restores that state.",
+    "where": "sample page, demo guide, README",
+    "test": "npm test -- --grep @claim:sample-state",
+    "sandbox": "fresh sample page; observe its score and clock, inspect the rendered sample state, advance briefly, reset, and assert scores, captures, trails, relays, and clock return"
+  },
+  {
     "id": "privacy-requests",
     "claim": "The game makes no analytics, advertising, or third-party runtime requests.",
     "where": "landing facts, privacy, README",
     "test": "npm test -- --grep @claim:privacy-requests",
     "sandbox": "fresh context; record requests through sample and online room creation; assert every request goes only to the static origin or its product-owned room service"
+  },
+  {
+    "id": "clear-saved-data",
+    "claim": "Clear saved game data removes settings, the active round, and online room keys from this browser.",
+    "where": "privacy page",
+    "test": "npm test -- --grep @claim:clear-saved-data",
+    "sandbox": "seed all three storage record types, confirm the privacy dialog, and assert no Linebreak Clash browser key remains"
   },
   {
     "id": "offline-play",
@@ -84,18 +119,32 @@
     "sandbox": "fresh 390×844, 2x DPR, touch-enabled Chromium context; run solo for three seconds and measure requestAnimationFrame throughput"
   },
   {
+    "id": "touch-controls",
+    "claim": "Touch controls steer a mobile round, and every link or control has a target at least 44 by 44 pixels.",
+    "where": "game controls, accessibility baseline, README",
+    "test": "npm test -- --grep @claim:touch-controls",
+    "sandbox": "fresh 393 px touch context; steer an active round with the labelled control, then measure every visible link and button on the game, sample, privacy, terms, and online pages"
+  },
+  {
     "id": "online-room",
-    "claim": "Two to four players on separate devices can share a server-authoritative 90-second room and finish the same round.",
+    "claim": "Two to four players on separate devices can finish the same 90-second room and start a shared rematch.",
     "where": "online page, release scope, README",
     "test": "npm test -- --grep @claim:online-room",
-    "sandbox": "two independent browser contexts create and join a real room, start the accelerated server round, compare end results, and restart with zero scores"
+    "sandbox": "four independent browser contexts create and join a real room, assert its 90-second duration, finish the accelerated test run with one shared result, and start a zero-score rematch"
+  },
+  {
+    "id": "server-authority",
+    "claim": "The online room service decides scores, collisions, positions, and time; browsers only send steering and dash input.",
+    "where": "README",
+    "test": "npm run test:realtime",
+    "sandbox": "authenticated raw room client sends forged score, position, collision, and clock fields alongside input; assert the next server snapshot retains server-controlled values"
   },
   {
     "id": "online-rejoin",
     "claim": "A dropped online player can rejoin the active room for 20 seconds.",
     "where": "online page, privacy, README",
     "test": "npm test -- --grep @claim:online-rejoin",
-    "sandbox": "two independent browser contexts start a real room; reload one active client and assert its stored room key restores the same room and round"
+    "sandbox": "two independent browser contexts start a real room; drop one client for just over 19 seconds, then load its stored room key and assert it rejoins the active round before the 20-second limit"
   },
   {
     "id": "room-persistence",

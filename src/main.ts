@@ -196,7 +196,6 @@ function homePage(): string {
           <p>Online rooms connect two to four players on separate devices.</p>
           <p>Settings and an active round stay in this browser.</p>
           <p>The sample never reads or changes saved game data.</p>
-          <p>There is no chat, account, profile, ranking, ad, or purchase.</p>
         </div>
       </section>
     </main>
@@ -270,7 +269,7 @@ function demoPage(): string {
       <strong>Demo — sample data, nothing is saved</strong>
       <div>
         <button type="button" class="text-button" id="reset-demo">Reset demo</button>
-        <a href="/" data-link>Start for real</a>
+        <a class="text-button" href="/" data-link>Start for real</a>
       </div>
     </aside>
     <main id="main" class="demo-main">

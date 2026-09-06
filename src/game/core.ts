@@ -154,6 +154,13 @@ export function createGame(options: CreateGameOptions = {}): GameState {
       state.players.blue.trail.push({ x: 132 + index * 12, y: 235 + Math.sin(index / 3) * 24, age: 5 - index * 0.12 });
       state.players.coral.trail.push({ x: 828 - index * 12, y: 325 - Math.sin(index / 3) * 24, age: 5 - index * 0.12 });
     }
+    // Continue from the newest supplied path point. Starting at the trail's
+    // origin makes the first fixed step collide with an older sample segment
+    // and clears the populated sample before the player can use it.
+    const blueEnd = state.players.blue.trail.at(-1)!;
+    const coralEnd = state.players.coral.trail.at(-1)!;
+    Object.assign(state.players.blue, { x: blueEnd.x, y: blueEnd.y, previousX: blueEnd.x, previousY: blueEnd.y, angle: 0 });
+    Object.assign(state.players.coral, { x: coralEnd.x, y: coralEnd.y, previousX: coralEnd.x, previousY: coralEnd.y, angle: Math.PI });
   }
   return state;
 }

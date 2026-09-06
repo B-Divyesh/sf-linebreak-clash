@@ -54,6 +54,21 @@ async function waitForStatus(socket, status) {
   });
 }
 
+async function nextSnapshot(socket, predicate = () => true) {
+  return new Promise((resolve, reject) => {
+    const timeout = setTimeout(() => reject(new Error('Expected a newer server snapshot.')), 2_000);
+    const listener = (raw) => {
+      const message = JSON.parse(String(raw));
+      if (message.type === 'snapshot' && predicate(message.room)) {
+        clearTimeout(timeout);
+        socket.off('message', listener);
+        resolve(message.room);
+      }
+    };
+    socket.on('message', listener);
+  });
+}
+
 let child = start();
 try {
   await ready(child);
@@ -62,6 +77,14 @@ try {
   const created = await post('/rooms', { name: 'Host' });
   if (created.status !== 201) throw new Error(`Create returned ${created.status}`);
   const host = await created.json();
+  const roomCodes = new Set([host.code]);
+  for (let attempt = 0; attempt < 16; attempt += 1) {
+    const response = await post('/rooms', { name: `Code ${attempt}` });
+    if (response.status !== 201) throw new Error(`Room-code create returned ${response.status}`);
+    const identity = await response.json();
+    if (!/^[2-9A-HJ-NP-Z]{8}$/.test(identity.code) || roomCodes.has(identity.code)) throw new Error('Room codes were not distinct secure-format codes.');
+    roomCodes.add(identity.code);
+  }
   const guests = [];
   for (const name of ['Two', 'Three', 'Four']) { const response = await post(`/rooms/${host.code}/join`, { name }); if (response.status !== 201) throw new Error(`Join returned ${response.status}`); guests.push(await response.json()); }
   const full = await post(`/rooms/${host.code}/join`, { name: 'Five' });
@@ -75,7 +98,16 @@ try {
   const guestConnection = await connect(guests[0]);
   const playing = waitForStatus(hostConnection.socket, 'playing');
   hostConnection.socket.send(JSON.stringify({ type: 'start' }));
-  await playing;
+  const startedRoom = await playing;
+  const trusted = startedRoom.players.find((player) => player.id === host.playerId);
+  if (!trusted) throw new Error('Host was missing from its own room snapshot.');
+  const afterForgery = nextSnapshot(hostConnection.socket, (room) => room.elapsed > startedRoom.elapsed);
+  hostConnection.socket.send(JSON.stringify({ type: 'input', left: false, right: false, dash: false, x: 777, y: 444, score: 999, captures: 999, alive: false, elapsed: 29, duration: 1, status: 'ended', result: 'forged', collision: false }));
+  const authoritativeRoom = await afterForgery;
+  const authoritativePlayer = authoritativeRoom.players.find((player) => player.id === host.playerId);
+  if (!authoritativePlayer || authoritativePlayer.score !== trusted.score || authoritativePlayer.captures !== trusted.captures || authoritativePlayer.x === 777 || authoritativePlayer.y === 444 || !authoritativePlayer.alive || authoritativeRoom.duration !== 30 || authoritativeRoom.status !== 'playing' || authoritativeRoom.elapsed >= 2) {
+    throw new Error('The room accepted client-authored score, position, collision, or clock state.');
+  }
   hostConnection.socket.close(); guestConnection.socket.close();
   await new Promise((resolve) => setTimeout(resolve, 30));
   await stop(child);
@@ -86,7 +118,7 @@ try {
   await new Promise((resolve) => setTimeout(resolve, 30));
   await stop(child);
   const persisted = new DatabaseSync(database);
-  persisted.prepare('UPDATE rooms SET updated_at = ? WHERE code = ?').run(Date.now() - 25 * 60 * 60 * 1000, host.code);
+  persisted.prepare('UPDATE rooms SET updated_at = ?').run(Date.now() - 25 * 60 * 60 * 1000);
   persisted.close();
   child = start(); await ready(child);
   const afterExpiry = await fetch(`${base}/health`).then((response) => response.json());
@@ -94,7 +126,7 @@ try {
   let limited = null;
   for (let attempt = 0; attempt < 70; attempt += 1) { const response = await fetch(`${base}/missing`); if (response.status === 429) { limited = response; break; } }
   if (!limited || limited.headers.get('retry-after') !== '60') throw new Error('Rate limit did not return 429 with Retry-After.');
-  console.log(JSON.stringify({ claim: '@claim:room-persistence', health: 200, roomPlayers: 4, fifthPlayer: 409, reconnects: '20/20', restartPersistence: true, expiredAfter24Hours: true, rateLimit: 429, retryAfter: 60 }));
+  console.log(JSON.stringify({ claims: ['@claim:server-authority', '@claim:room-persistence'], health: 200, roomCodeSamples: roomCodes.size, roomPlayers: 4, fifthPlayer: 409, reconnects: '20/20', serverRejectedForgedState: true, restartPersistence: true, expiredAfter24Hours: true, rateLimit: 429, retryAfter: 60 }));
 } finally {
   if (child.exitCode === null) await stop(child);
 }

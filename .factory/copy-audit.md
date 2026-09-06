@@ -30,7 +30,6 @@ contains a banned marketing word. No sentence exceeds 22 words.
 | Online rooms connect two to four players on separate devices. | 9 | Pass |
 | Settings and an active round stay in this browser. | 9 | Pass |
 | The sample never reads or changes saved game data. | 9 | Pass |
-| There is no chat, account, profile, ranking, ad, or purchase. | 10 | Pass |
 | Capture relay nodes in a 90-second trail arena. | 8 | Pass |
 
 Read-aloud result: the headline, audience sentence, sample action, and its next

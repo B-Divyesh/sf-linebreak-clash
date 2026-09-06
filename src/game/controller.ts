@@ -226,6 +226,9 @@ export class GameController {
     if (event.repeat && (event.code === 'Space' || event.code === 'Enter')) return;
     if (event.code === 'KeyP' || event.code === 'Escape') {
       if (this.settingsDialog.open) return;
+      // Escape normally cancels a native dialog. Prevent that default before
+      // opening the pause dialog so one key press cannot immediately resume.
+      event.preventDefault();
       if (this.state.status === 'playing') this.openPause();
       else if (this.state.status === 'paused' && this.pauseDialog.open) this.closePause();
       return;

@@ -6,6 +6,20 @@ async function startSolo(page: Page): Promise<void> {
   await expect(page.locator('[data-game-root]')).toHaveAttribute('data-state', 'playing');
 }
 
+async function expectTouchTargets(page: Page): Promise<void> {
+  const undersized = await page.locator('a, button').evaluateAll((elements) => elements
+    .filter((element) => {
+      const style = getComputedStyle(element);
+      return style.display !== 'none' && style.visibility !== 'hidden' && element.getClientRects().length > 0;
+    })
+    .map((element) => {
+      const rect = element.getBoundingClientRect();
+      return { name: (element.textContent || element.getAttribute('aria-label') || '').trim(), width: rect.width, height: rect.height };
+    })
+    .filter((target) => target.width < 44 || target.height < 44));
+  expect(undersized).toEqual([]);
+}
+
 test('starts the complete game without an account, ad, or payment @claim:free-entry', async ({ page }) => {
   await page.goto('/');
   await startSolo(page);
@@ -74,6 +88,44 @@ test('settings persist after reload and remain applied @claim:settings-persist',
   await expect(page.getByLabel('Player 1 keys')).toHaveValue('jli');
 });
 
+test('remapped Player 1 controls steer and dash during a round @claim:remapped-controls', async ({ page }) => {
+  await page.goto('/');
+  await page.getByRole('button', { name: 'Open game settings' }).click();
+  await page.getByLabel('Player 1 keys').selectOption('jli');
+  await page.getByRole('button', { name: 'Save and close' }).click();
+  await startSolo(page);
+  const before = await page.evaluate(() => window.__linebreakDebug?.getState().players.blue.angle ?? 0);
+  await page.keyboard.down('KeyJ');
+  await page.waitForTimeout(250);
+  await page.keyboard.up('KeyJ');
+  const afterTurn = await page.evaluate(() => window.__linebreakDebug?.getState().players.blue.angle ?? 0);
+  expect(afterTurn).toBeLessThan(before - 0.2);
+  await page.keyboard.down('KeyI');
+  await page.waitForTimeout(100);
+  await page.keyboard.up('KeyI');
+  expect(await page.evaluate(() => window.__linebreakDebug?.getState().players.blue.dashCooldown ?? 0)).toBeGreaterThan(3.5);
+});
+
+test('the Pause button, P, and Escape pause and resume the same round @claim:pause-controls', async ({ page }) => {
+  await page.goto('/');
+  await startSolo(page);
+  const elapsedBeforePause = await page.evaluate(() => window.__linebreakDebug?.getState().elapsed ?? 0);
+  await page.getByRole('button', { name: 'Pause round' }).click();
+  await expect(page.getByRole('dialog', { name: 'Round paused' })).toBeVisible();
+  await expect(page.locator('[data-game-root]')).toHaveAttribute('data-state', 'paused');
+  await page.getByRole('button', { name: 'Resume round' }).click();
+  await expect(page.locator('[data-game-root]')).toHaveAttribute('data-state', 'playing');
+  await page.keyboard.press('KeyP');
+  await expect(page.getByRole('dialog', { name: 'Round paused' })).toBeVisible();
+  await page.keyboard.press('Escape');
+  await expect(page.locator('[data-game-root]')).toHaveAttribute('data-state', 'playing');
+  await page.keyboard.press('Escape');
+  await expect(page.getByRole('dialog', { name: 'Round paused' })).toBeVisible();
+  await expect(page.locator('[data-game-root]')).toHaveAttribute('data-state', 'paused');
+  await page.getByRole('button', { name: 'Resume round' }).click();
+  expect(await page.evaluate(() => window.__linebreakDebug?.getState().elapsed ?? 0)).toBeGreaterThanOrEqual(elapsedBeforePause);
+});
+
 test('an active round recovers after a refresh within 20 seconds @claim:refresh-recovery', async ({ page }) => {
   await page.goto('/');
   await startSolo(page);
@@ -106,6 +158,63 @@ test('sample mode loads, resets, and never changes saved game data @claim:demo-i
   const storedAfter = await page.evaluate(() => localStorage.getItem('linebreak-clash:settings'));
   expect(storedAfter).toBe(storedBefore);
   expect(await page.evaluate(() => Object.keys(localStorage).filter((key) => key.startsWith('demo:')))).toEqual([]);
+});
+
+test('the seeded sample restores its visible game state on reset @claim:sample-state', async ({ page }) => {
+  await page.goto('/demo/');
+  await expect(page.getByText('Demo — sample data, nothing is saved')).toBeVisible();
+  await expect(page.locator('#blue-score')).toHaveText('4');
+  await expect(page.locator('#coral-score')).toHaveText('2');
+  await expect(page.locator('#round-timer')).toHaveText('00:56');
+  const initial = await page.evaluate(() => {
+    const state = window.__linebreakDebug?.getState();
+    if (!state) throw new Error('Sample game state is unavailable.');
+    return {
+      captures: state.players.blue.captures + state.players.coral.captures,
+      trailCounts: [state.players.blue.trail.length, state.players.coral.trail.length],
+      trails: [state.players.blue, state.players.coral].map((player) => player.trail.slice(0, 16).map(({ x, y }) => ({ x, y }))),
+      relays: state.relays.map(({ id, x, y, active }) => ({ id, x, y, active })),
+    };
+  });
+  expect(initial.captures).toBe(3);
+  expect(initial.trailCounts[0]).toBeGreaterThanOrEqual(16);
+  expect(initial.trailCounts[1]).toBeGreaterThanOrEqual(16);
+  expect(initial.relays.filter((relay) => relay.active)).toHaveLength(3);
+  const visibleTrailPixels = await page.locator('#arena').evaluate((node) => {
+    const canvas = node as HTMLCanvasElement;
+    const pixels = canvas.getContext('2d')?.getImageData(0, 0, canvas.width, canvas.height).data;
+    if (!pixels) throw new Error('Sample canvas pixels are unavailable.');
+    let blue = 0;
+    let coral = 0;
+    for (let index = 0; index < pixels.length; index += 4) {
+      const [red, green, blueChannel] = [pixels[index] ?? 0, pixels[index + 1] ?? 0, pixels[index + 2] ?? 0];
+      if (blueChannel > red + 50 && blueChannel > green + 30) blue += 1;
+      if (red > green + 50 && red > blueChannel + 50) coral += 1;
+    }
+    return { blue, coral };
+  });
+  expect(visibleTrailPixels.blue).toBeGreaterThan(500);
+  expect(visibleTrailPixels.coral).toBeGreaterThan(500);
+  await page.waitForTimeout(550);
+  await page.getByRole('button', { name: 'Reset demo' }).click();
+  await expect(page.locator('#blue-score')).toHaveText('4');
+  await expect(page.locator('#coral-score')).toHaveText('2');
+  await expect(page.locator('#round-timer')).toHaveText('00:56');
+  const reset = await page.evaluate(() => {
+    const state = window.__linebreakDebug?.getState();
+    if (!state) throw new Error('Reset sample game state is unavailable.');
+    return {
+      captures: state.players.blue.captures + state.players.coral.captures,
+      trailCounts: [state.players.blue.trail.length, state.players.coral.trail.length],
+      trails: [state.players.blue, state.players.coral].map((player) => player.trail.slice(0, 16).map(({ x, y }) => ({ x, y }))),
+      relays: state.relays.map(({ id, x, y, active }) => ({ id, x, y, active })),
+    };
+  });
+  expect(reset.captures).toBe(3);
+  expect(reset.trailCounts[0]).toBeGreaterThanOrEqual(16);
+  expect(reset.trailCounts[1]).toBeGreaterThanOrEqual(16);
+  expect(reset.trails).toEqual(initial.trails);
+  expect(reset.relays).toEqual(initial.relays);
 });
 
 test('the sample sends no analytics, ads, or third-party requests @claim:privacy-requests', async ({ browser, baseURL }) => {
@@ -161,42 +270,47 @@ test('the arena renders at least 50 FPS on the mobile test profile @claim:mobile
   await context.close();
 });
 
-test('two independent clients join a room and finish the same round @claim:online-room', async ({ browser, baseURL }) => {
+test('four independent clients finish the same 90-second room and share a rematch @claim:online-room', async ({ browser, baseURL }) => {
+  test.setTimeout(40_000);
   const hostContext = await browser.newContext();
-  const guestContext = await browser.newContext();
+  const guestContexts = await Promise.all([browser.newContext(), browser.newContext(), browser.newContext()]);
   const host = await hostContext.newPage();
-  const guest = await guestContext.newPage();
+  const guests = await Promise.all(guestContexts.map((context) => context.newPage()));
   await host.goto(`${baseURL}/online/`);
   await host.getByLabel('Your name').first().fill('Ada');
   await host.getByRole('button', { name: 'Create a room' }).click();
   await expect(host.locator('#online-room')).toBeVisible();
   const roomCode = (await host.locator('#room-code').textContent())?.trim() ?? '';
   expect(roomCode).toMatch(/^[2-9A-HJ-NP-Z]{8}$/);
-  await guest.goto(`${baseURL}/online/?room=${roomCode}`);
-  await guest.getByLabel('Your name').nth(1).fill('Lin');
-  await guest.getByRole('button', { name: 'Join the room' }).click();
-  await expect(host.getByText('Lin', { exact: true })).toBeVisible();
+  for (const [index, guest] of guests.entries()) {
+    await guest.goto(`${baseURL}/online/?room=${roomCode}`);
+    await guest.getByLabel('Your name').nth(1).fill(['Lin', 'Jo', 'Mina'][index] ?? 'Guest');
+    await guest.getByRole('button', { name: 'Join the room' }).click();
+  }
+  await expect(host.locator('#online-players li')).toHaveCount(4);
   await host.getByRole('button', { name: 'Start online round' }).click();
   await expect(host.locator('#online-status-text')).toHaveText('Round active');
-  await expect(guest.locator('#online-status-text')).toHaveText('Round active');
-  await expect(host.locator('#online-end')).toBeVisible({ timeout: 8_000 });
-  await expect(guest.locator('#online-end')).toBeVisible({ timeout: 8_000 });
-  expect(await host.locator('#online-result').textContent()).toMatch(/wins|draw/);
-  expect(await guest.locator('#online-result').textContent()).toBe(await host.locator('#online-result').textContent());
+  await expect(host.locator('#online-timer')).toHaveText('01:30');
+  await Promise.all(guests.map((guest) => expect(guest.locator('#online-status-text')).toHaveText('Round active')));
+  await Promise.all([host, ...guests].map((page) => expect(page.locator('#online-end')).toBeVisible({ timeout: 30_000 })));
+  const results = await Promise.all([host, ...guests].map((page) => page.locator('#online-result').textContent()));
+  expect(results[0]).toMatch(/wins|draw/);
+  expect(new Set(results).size).toBe(1);
   await host.getByRole('button', { name: 'Play another round' }).click();
   await expect(host.locator('#online-status-text')).toHaveText('Round active');
-  await expect(host.locator('#online-timer')).toHaveText('00:04');
-  await expect(host.locator('#online-players li b')).toHaveText(['0', '0']);
-  await expect(guest.locator('#online-status-text')).toHaveText('Round active');
+  await expect(host.locator('#online-timer')).toHaveText('01:30');
+  await expect(host.locator('#online-players li b')).toHaveText(['0', '0', '0', '0']);
+  await Promise.all(guests.map((guest) => expect(guest.locator('#online-status-text')).toHaveText('Round active')));
   await hostContext.close();
-  await guestContext.close();
+  await Promise.all(guestContexts.map((context) => context.close()));
 });
 
-test('a real client rejoins its active room after a dropped page @claim:online-rejoin', async ({ browser, baseURL }) => {
+test('a dropped client rejoins the active room just before its 20-second limit @claim:online-rejoin', async ({ browser, baseURL }) => {
+  test.setTimeout(40_000);
   const hostContext = await browser.newContext();
   const guestContext = await browser.newContext();
   const host = await hostContext.newPage();
-  const guest = await guestContext.newPage();
+  let guest = await guestContext.newPage();
   await host.goto(`${baseURL}/online/`);
   await host.getByRole('button', { name: 'Create a room' }).click();
   await expect(host.locator('#online-room')).toBeVisible();
@@ -207,10 +321,14 @@ test('a real client rejoins its active room after a dropped page @claim:online-r
   await expect(host.locator('#online-players li')).toHaveCount(2);
   await host.getByRole('button', { name: 'Start online round' }).click();
   await expect(guest.locator('#online-status-text')).toHaveText('Round active');
-  await guest.reload();
+  await guest.close();
+  await expect(host.getByText('Rejoining', { exact: true })).toBeVisible();
+  await host.waitForTimeout(19_150);
+  guest = await guestContext.newPage();
+  await guest.goto(`${baseURL}/online/?room=${roomCode}`);
   await expect(guest.locator('#online-connection')).toHaveText('Connected');
   await expect(guest.locator('#room-code')).toHaveText(roomCode);
-  await expect(guest.locator('#online-status-text')).toHaveText(/Round active|Round complete/);
+  await expect(guest.locator('#online-status-text')).toHaveText('Round active');
   await hostContext.close();
   await guestContext.close();
 });
@@ -228,10 +346,11 @@ test('an invalid online room code gives a useful recovery message', async ({ pag
   await expect(page.locator('#online-error')).toHaveText('Room not found. Check the code.');
 });
 
-test('supports touch play, pause recovery, and an expired snapshot', async ({ browser, baseURL }) => {
+test('touch controls steer mobile play and visible links and controls meet the 44px target @claim:touch-controls', async ({ browser, baseURL }) => {
   const context = await browser.newContext({ viewport: { width: 393, height: 727 }, deviceScaleFactor: 2.75, hasTouch: true, isMobile: true });
   const page = await context.newPage();
   await page.goto(`${baseURL}/`);
+  await expectTouchTargets(page);
   const arena = await page.locator('#arena').boundingBox();
   expect(arena?.y ?? Number.POSITIVE_INFINITY).toBeLessThan(727);
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(393);
@@ -261,8 +380,15 @@ test('supports touch play, pause recovery, and an expired snapshot', async ({ br
   await page.goto(`${baseURL}/online/`);
   await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(393);
+  await expectTouchTargets(page);
   const createButton = await page.getByRole('button', { name: 'Create a room' }).boundingBox();
   expect(createButton?.height ?? 0).toBeGreaterThanOrEqual(44);
+  await page.goto(`${baseURL}/demo/`);
+  await expectTouchTargets(page);
+  await page.goto(`${baseURL}/privacy/`);
+  await expectTouchTargets(page);
+  await page.goto(`${baseURL}/terms/`);
+  await expectTouchTargets(page);
   await page.setViewportSize({ width: 320, height: 568 });
   await page.goto(`${baseURL}/`);
   await page.evaluate(() => { document.documentElement.style.fontSize = '200%'; });
@@ -305,18 +431,18 @@ test('has no serious accessibility violations on every route', async ({ page }) 
   }
 });
 
-test('respects reduced motion and clears local data with confirmation', async ({ page }) => {
+test('respects reduced motion and clears every saved game key with confirmation @claim:clear-saved-data', async ({ page }) => {
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await page.goto('/');
   const transition = await page.locator('.button').first().evaluate((element) => getComputedStyle(element).transitionDuration);
   expect(['0s', '0.00001s', '1e-05s']).toContain(transition);
   await page.evaluate(() => localStorage.setItem('linebreak-clash:settings', '{"sound":false}'));
+  await page.evaluate(() => localStorage.setItem('linebreak-clash:round', '{"savedAt":1}'));
   await page.evaluate(() => localStorage.setItem('linebreak-clash:online:ABCDEFGH', '{"token":"test"}'));
   await page.goto('/privacy/');
   await page.getByRole('button', { name: 'Clear saved game data' }).click();
   await expect(page.getByRole('dialog', { name: 'Clear saved game data?' })).toBeVisible();
   await page.getByRole('button', { name: 'Clear data', exact: true }).click();
   await expect(page.locator('#clear-feedback')).toContainText('cleared');
-  expect(await page.evaluate(() => localStorage.getItem('linebreak-clash:settings'))).toBeNull();
-  expect(await page.evaluate(() => localStorage.getItem('linebreak-clash:online:ABCDEFGH'))).toBeNull();
+  expect(await page.evaluate(() => Object.keys(localStorage).filter((key) => key.startsWith('linebreak-clash:')))).toEqual([]);
 });

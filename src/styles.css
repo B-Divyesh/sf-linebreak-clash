@@ -76,7 +76,10 @@ button:disabled { cursor: not-allowed; opacity: .48; box-shadow: none; transform
   border-bottom: 4px solid var(--relay);
 }
 .wordmark {
+  min-width: 44px;
+  min-height: 44px;
   display: inline-grid;
+  align-content: center;
   line-height: .82;
   letter-spacing: .08em;
   text-decoration: none;
@@ -87,7 +90,7 @@ button:disabled { cursor: not-allowed; opacity: .48; box-shadow: none; transform
 }
 .wordmark span:last-child { margin-left: 14px; color: var(--relay); }
 .site-header nav, .site-footer nav { display: flex; align-items: center; gap: clamp(16px, 3vw, 32px); }
-.site-header nav a { min-height: 44px; display: inline-flex; align-items: center; font-weight: 700; }
+.site-header nav a { min-width: 44px; min-height: 44px; display: inline-flex; align-items: center; justify-content: center; font-weight: 700; }
 
 .first-screen {
   display: grid;
@@ -214,6 +217,12 @@ dialog::backdrop { background: rgba(16, 35, 61, .75); }
 .demo-banner { position: sticky; z-index: 8; top: 0; display: flex; justify-content: space-between; align-items: center; gap: 16px; padding: 10px clamp(16px, 4vw, 64px); background: var(--relay); color: var(--ink); border-bottom: 3px solid var(--ink); }
 .demo-banner div { display: flex; align-items: center; gap: 18px; }
 .text-button { min-height: 44px; padding: 5px 10px; background: transparent; color: var(--ink); box-shadow: none; clip-path: none; }
+.demo-banner a, .text-page a:not(.button), .site-footer nav a {
+  min-width: 44px;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+}
 .demo-main { padding: clamp(24px, 4vw, 56px) clamp(16px, 6vw, 96px) clamp(64px, 8vw, 110px); }
 .demo-intro { display: grid; grid-template-columns: 1fr 2fr; gap: 8px 40px; align-items: end; margin-bottom: 28px; }
 .demo-intro .product-label { grid-column: 1 / -1; }
@@ -291,8 +300,8 @@ dialog::backdrop { background: rgba(16, 35, 61, .75); }
 }
 
 @media (max-width: 720px) {
-  .site-header { min-height: 60px; padding-inline: 16px; }
-  .site-header nav { gap: 10px; flex-wrap: wrap; justify-content: flex-end; }
+  .site-header { min-height: 60px; gap: 8px; padding-inline: 16px; }
+  .site-header nav { gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
   .site-header nav a { font-size: 1rem; }
   .first-screen { min-height: auto; padding: 18px 12px 42px; gap: 18px; }
   .intro-panel { display: block; padding-inline: 4px; }

@@ -4,9 +4,10 @@ Linebreak Clash is a free 90-second browser arena for solo play, two players on
 one keyboard, or two to four players in a private online room. Steer a temporary
 trail through numbered relay nodes, then dash to cross trails without colliding.
 
-It is for friends who want a quick arena with more to do than survive. Online
-rooms use a product-owned authoritative service, need no account, and let a
-dropped player rejoin for 20 seconds. Groups can restart together after a round.
+It is for friends who want a quick arena with relay captures. Online rooms use a
+product-owned service that decides scores, collisions, and time. They need no
+account, let a dropped player rejoin for 20 seconds, and let groups restart
+together after a round.
 
 ## Play
 
@@ -17,12 +18,12 @@ dropped player rejoin for 20 seconds. Groups can restart together after a round.
 
 Player 1 can switch to J/L for steering and I for dash in **Settings**.
 
-Solo mode supplies a deterministic bot. Local mode gives each player separate
+Solo mode supplies a bot. Local mode gives each player separate
 controls. Capturing a relay adds two points. A collision adds one point to the
 other trail. The higher score wins when the 90-second timer ends.
 
 For online play, one person creates a room at
-[`/online/`](https://linebreak-clash.sociobot.in/online/) and shares its random
+[`/online/`](https://linebreak-clash.sociobot.in/online/) and shares its
 eight-character code or invite link. Two to four independent browsers can join.
 The host starts the round and can start a rematch from the shared end screen.
 
@@ -61,12 +62,14 @@ npm test
 
 `npm run build` creates `dist/`. The Playwright suite starts the production
 preview and a test room service itself. It exercises a complete deterministic
-round, restart, every play mode, two independent online clients, online rejoin,
-touch and keyboard input, settings, local refresh recovery, offline play, sample
-isolation, routes, accessibility, privacy requests, and mobile frame rate.
+round, restart, every play mode, four independent online clients, a near-limit
+online rejoin, touch and keyboard input, settings, local refresh recovery,
+offline play, sample reset and isolation, routes, accessibility, privacy
+requests, and mobile frame rate.
 
-`npm run test:realtime` also checks four-player capacity, a rejected fifth
-player, 20 successful reconnects, SQLite restart persistence, room expiry,
+`npm run test:realtime` also checks distinct eight-character room codes,
+four-player capacity, a rejected fifth player, 20 successful reconnects,
+rejection of forged browser state, SQLite restart persistence, room expiry,
 health, and HTTP 429 responses with `Retry-After`.
 
 The mobile browser profile renders at least 50 frames per second in the declared
@@ -83,8 +86,8 @@ rounds work offline after the first visit through the product service worker.
 Online play sends the chosen name, controls, and room state only to the
 product-owned room service. SQLite room state survives a service restart and
 expires after 24 hours without activity. There are no accounts, analytics, ads,
-purchases, open chat, or third-party game services. See `/privacy/` and
-`/terms/` for the public policies.
+purchases, or third-party game services. See `/privacy/` and `/terms/` for the
+public policies.
 
 ## Deploy
 

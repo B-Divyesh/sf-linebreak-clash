@@ -67,7 +67,7 @@ describe('deterministic game core', () => {
     expect(blue.dashRemaining).toBeGreaterThan(0);
   });
 
-  it('scores a collision when the same crossing has no dash', () => {
+  it('gives the other player one point when a trail collision happens @claim:collision-score', () => {
     const game = createGame({ seed: 46, status: 'playing', mode: 'local' });
     const blue = game.players.blue;
     blue.x = 200;
@@ -83,6 +83,7 @@ describe('deterministic game core', () => {
     advanceGame(game, emptyInputs());
     expect(blue.alive).toBe(false);
     expect(game.players.coral.score).toBe(1);
+    expect(blue.respawnRemaining).toBeGreaterThan(0);
   });
 
   it('removes old trail points from the arena', () => {
@@ -109,4 +110,3 @@ describe('deterministic game core', () => {
     expect(isValidSnapshot(game)).toBe(false);
   });
 });
-

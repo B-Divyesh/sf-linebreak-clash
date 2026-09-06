@@ -8,6 +8,10 @@ import { WebSocketServer, WebSocket } from 'ws';
 const PORT = Number(process.env.PORT || 8787);
 const DB_PATH = process.env.LINEBREAK_DATA || '/data/linebreak-clash.sqlite';
 const ROUND_DURATION = Number(process.env.ROUND_DURATION || 90);
+// Test-only acceleration keeps the public 90-second room duration intact.
+// Production leaves both values at their safe defaults of one and zero.
+const TIME_SCALE = Math.max(1, Number(process.env.LINEBREAK_TIME_SCALE || 1));
+const TIME_SCALE_DELAY_MS = Math.max(0, Number(process.env.LINEBREAK_TIME_SCALE_DELAY_MS || 0));
 const ROOM_TTL_MS = 24 * 60 * 60 * 1000;
 const ALLOWED_ORIGINS = new Set([
   'https://linebreak-clash.sociobot.in',
@@ -131,6 +135,7 @@ function newRoom(name) {
 function resetRound(room) {
   room.status = 'playing';
   room.elapsed = 0;
+  room.startedAt = Date.now();
   room.result = null;
   room.relayIndex = 3;
   room.relays = [{ id: 1, x: 480, y: 100, active: true, respawnRemaining: 0 }, { id: 2, x: 280, y: 280, active: true, respawnRemaining: 0 }, { id: 3, x: 680, y: 410, active: true, respawnRemaining: 0 }];
@@ -271,7 +276,7 @@ function step(room, dt) {
 }
 
 let previous = performance.now(); let accumulator = 0; let broadcastClock = 0; let saveClock = 0;
-const simulationTimer = setInterval(() => { const now = performance.now(); accumulator += Math.min(.2, (now - previous) / 1000); previous = now; while (accumulator >= 1 / 60) { for (const room of rooms.values()) step(room, 1 / 60); accumulator -= 1 / 60; } broadcastClock += 1 / 60; saveClock += 1 / 60; if (broadcastClock >= 1 / 15) { for (const room of rooms.values()) if (room.status !== 'waiting' || room.players.some((player) => player.connected)) broadcast(room); broadcastClock = 0; } if (saveClock >= 1) { for (const room of rooms.values()) if (room.status === 'playing') saveRoom(room); saveClock = 0; } }, 1000 / 60);
+const simulationTimer = setInterval(() => { const now = performance.now(); accumulator += Math.min(.2, (now - previous) / 1000); previous = now; while (accumulator >= 1 / 60) { for (const room of rooms.values()) { const scale = TIME_SCALE > 1 && room.startedAt && Date.now() - room.startedAt >= TIME_SCALE_DELAY_MS ? TIME_SCALE : 1; step(room, (1 / 60) * scale); } accumulator -= 1 / 60; } broadcastClock += 1 / 60; saveClock += 1 / 60; if (broadcastClock >= 1 / 15) { for (const room of rooms.values()) if (room.status !== 'waiting' || room.players.some((player) => player.connected)) broadcast(room); broadcastClock = 0; } if (saveClock >= 1) { for (const room of rooms.values()) if (room.status === 'playing') saveRoom(room); saveClock = 0; } }, 1000 / 60);
 const expiryTimer = setInterval(expireRooms, 60_000); expiryTimer.unref();
 
 loadRooms();
