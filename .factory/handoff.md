@@ -1,5 +1,20 @@
 # Linebreak Clash handoff
 
+## Independent verification 2 — FAIL
+
+Implementation candidate: `54b09c184e48dffdba3b2e03a4124be0f198edb5`.
+Documentation baseline: `87d78ccc3eaa8110241d304bf358f6b9115b06d0`.
+
+Fresh independent QA found 3 issues: one major claims-contract gap covering ten
+untested or incompletely tested public promise components, a 1.09:1 content
+focus outline, and an online end result that is neither focused nor announced
+through a live region. The acceptance verdict is **FAIL** even though all 22
+declared claim commands and all runtime gates pass.
+
+The full evidence, reproduction details, claim table, and earlier-finding
+dispositions are in [verification-2.md](./verification-2.md). No product code
+was changed. The earlier repair record remains below for deployment context.
+
 ## Repair verification — PASS
 
 Implementation SHA: `54b09c184e48dffdba3b2e03a4124be0f198edb5`.
