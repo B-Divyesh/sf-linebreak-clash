@@ -1,5 +1,30 @@
 # Linebreak Clash handoff
 
+## Independent verification 1 — FAIL
+
+Independent verification on 6 September 2026 reviewed implementation candidate
+`23e5b9ef0cee5d9d17f6faa9ade8e6facfb36032` and the matching live static
+assets. Product code was not changed.
+
+The game, sample, complete live 90-second two-client round, mid-round rejoin,
+rematch, offline play, mobile performance, SQLite restart persistence, room
+isolation, and live 429/`Retry-After` behavior passed. All 15 declared claim
+commands passed individually, and `npm run check` passed 17/17 browser and 8/8
+unit tests. Lighthouse remained 100 in all four categories.
+
+The verdict is still **FAIL** because independent QA found three issues:
+
+1. Major: public claims are missing from `.factory/claims.json`, and five
+   promise components lack complete claim-test proof.
+2. Minor: Escape does not pause an active round, although P and the Pause
+   button work.
+3. Minor: several phone navigation and text-link targets are under 44×44 px.
+
+See [verification-1.md](./verification-1.md) for reproduction steps, claim
+results, evidence, and earlier-finding dispositions. Fresh evidence is under
+`/work/.evidence/linebreak-clash/`. The full report is also copied to
+`/work/.evidence/qa-report.md`.
+
 ## Release
 
 Linebreak Clash is a free browser arena for solo play, two players on one
