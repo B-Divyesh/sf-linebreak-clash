@@ -15,6 +15,8 @@ the arena, and **Try it with sample data** before scrolling.
 - Verification-harness source: `358df09809aa154470135868711666b019c3866c`.
   This changes only the sample-isolation test setup; it does not change the
   built browser assets.
+- Verification documentation baseline:
+  `ab2f3efafe0dff5b26b6a38b33eab31daffe49bb`.
 - Live URL: <https://linebreak-clash.sociobot.in>.
 - The fresh build at `358df09` produced `main-BsWgBQYr.js` SHA-256
   `81425e16bc7119476de0ef5700adfb44922f1a8ef853258fa60cd62181d16202` and

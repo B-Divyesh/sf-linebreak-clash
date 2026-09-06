@@ -5,6 +5,8 @@
 Runtime implementation deployed: `528bba9e08c63aa507e34853f9ffc8f0c71e90f4`.
 The later test-only verification source is
 `358df09809aa154470135868711666b019c3866c`; it does not alter `dist/`.
+Verification documentation baseline:
+`ab2f3efafe0dff5b26b6a38b33eab31daffe49bb`.
 
 This repair closes strict review 2 F-01. A populated two-player online room
 previously overflowed a 393 px phone by up to 116 px with valid 20-character
