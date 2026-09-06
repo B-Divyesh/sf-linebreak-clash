@@ -168,6 +168,10 @@ test('sample mode loads, resets, and never changes saved game data @claim:demo-i
   await page.goto('/');
   await startSolo(page);
   await page.waitForTimeout(650);
+  await page.getByRole('button', { name: 'Pause round' }).click();
+  await expect(page.getByRole('dialog', { name: 'Round paused' })).toBeVisible();
+  await page.locator('#pause-dialog').evaluate((dialog: HTMLDialogElement) => dialog.close());
+  await expect(page.locator('[data-game-root]')).toHaveAttribute('data-state', 'paused');
   await page.evaluate(async () => {
     localStorage.setItem('linebreak-clash:online:ABCDEFGH', JSON.stringify({ code: 'ABCDEFGH', playerId: 'real-player', token: 'real-token' }));
     await new Promise<void>((resolve, reject) => {
