@@ -4,7 +4,8 @@
 
 Independent verification on 6 September 2026 reviewed implementation candidate
 `23e5b9ef0cee5d9d17f6faa9ade8e6facfb36032` and the matching live static
-assets. Product code was not changed.
+assets. The verification documentation commit is
+`44dca4be7813c0c76412aa466d09e6ad118d55dd`. Product code was not changed.
 
 The game, sample, complete live 90-second two-client round, mid-round rejoin,
 rematch, offline play, mobile performance, SQLite restart persistence, room

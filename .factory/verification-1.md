@@ -17,6 +17,9 @@ the live arena, and **Try it with sample data** as the first action.
   `23e5b9ef0cee5d9d17f6faa9ade8e6facfb36032`.
 - Documentation examined: the same `23e5b9e` checkout. This verification and
   its handoff update are report-only changes made after the review.
+- Verification documentation commit:
+  `44dca4be7813c0c76412aa466d09e6ad118d55dd` (the report-only commit; the
+  following pointer-only commit records this SHA).
 - Static implementation recorded by the handoff: `5ff1528`.
 - Realtime implementation recorded by the handoff and exercised live:
   `19f41ed`.
