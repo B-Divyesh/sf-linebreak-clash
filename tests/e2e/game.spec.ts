@@ -144,6 +144,44 @@ test('sample mode loads, resets, and never changes saved game data @claim:demo-i
     localStorage.setItem('linebreak-clash:settings', JSON.stringify({ sound: false, reduceEffects: true, assist: true }));
   });
   await page.goto('/');
+  await startSolo(page);
+  await page.waitForTimeout(650);
+  await page.evaluate(async () => {
+    localStorage.setItem('linebreak-clash:online:ABCDEFGH', JSON.stringify({ code: 'ABCDEFGH', playerId: 'real-player', token: 'real-token' }));
+    await new Promise<void>((resolve, reject) => {
+      const request = indexedDB.open('linebreak-real-data', 1);
+      request.onupgradeneeded = () => request.result.createObjectStore('round');
+      request.onerror = () => reject(request.error);
+      request.onsuccess = () => {
+        const transaction = request.result.transaction('round', 'readwrite');
+        transaction.objectStore('round').put('untouched', 'active');
+        transaction.oncomplete = () => { request.result.close(); resolve(); };
+        transaction.onerror = () => reject(transaction.error);
+      };
+    });
+    const storage = navigator.storage as StorageManager & { getDirectory?: () => Promise<FileSystemDirectoryHandle> };
+    if (storage.getDirectory) {
+      const directory = await storage.getDirectory();
+      const file = await directory.getFileHandle('real-round.txt', { create: true });
+      const writable = await file.createWritable();
+      await writable.write('untouched');
+      await writable.close();
+    }
+  });
+  const storageBefore = await page.evaluate(async () => {
+    const local = Object.fromEntries(Object.keys(localStorage).sort().map((key) => [key, localStorage.getItem(key)]));
+    const databases = (await indexedDB.databases()).map((database) => database.name).filter(Boolean).sort();
+    const storage = navigator.storage as StorageManager & { getDirectory?: () => Promise<FileSystemDirectoryHandle> };
+    let opfs: string[] | null = null;
+    if (storage.getDirectory) {
+      const directory = await storage.getDirectory();
+      opfs = [];
+      const entries = (directory as unknown as { entries: () => AsyncIterable<[string, unknown]> }).entries();
+      for await (const [name] of entries) opfs.push(name);
+      opfs.sort();
+    }
+    return { local, databases, opfs };
+  });
   await page.getByRole('link', { name: 'Try it with sample data' }).click();
   await expect(page).toHaveURL(/\/demo\/$/);
   await expect(page.getByText('Demo — sample data, nothing is saved')).toBeVisible();
@@ -155,9 +193,26 @@ test('sample mode loads, resets, and never changes saved game data @claim:demo-i
   await page.getByRole('button', { name: 'Save and close' }).click();
   await page.getByRole('button', { name: 'Reset demo' }).click();
   await expect(page.locator('#blue-score')).toHaveText('4');
-  const storedAfter = await page.evaluate(() => localStorage.getItem('linebreak-clash:settings'));
-  expect(storedAfter).toBe(storedBefore);
-  expect(await page.evaluate(() => Object.keys(localStorage).filter((key) => key.startsWith('demo:')))).toEqual([]);
+  const storageAfter = await page.evaluate(async () => {
+    const local = Object.fromEntries(Object.keys(localStorage).sort().map((key) => [key, localStorage.getItem(key)]));
+    const databases = (await indexedDB.databases()).map((database) => database.name).filter(Boolean).sort();
+    const storage = navigator.storage as StorageManager & { getDirectory?: () => Promise<FileSystemDirectoryHandle> };
+    let opfs: { names: string[]; text: string } | null = null;
+    if (storage.getDirectory) {
+      const directory = await storage.getDirectory();
+      const names: string[] = [];
+      const entries = (directory as unknown as { entries: () => AsyncIterable<[string, unknown]> }).entries();
+      for await (const [name] of entries) names.push(name);
+      const file = await directory.getFileHandle('real-round.txt');
+      opfs = { names: names.sort(), text: await (await file.getFile()).text() };
+    }
+    return { local, databases, opfs };
+  });
+  expect(await page.evaluate(() => localStorage.getItem('linebreak-clash:settings'))).toBe(storedBefore);
+  expect(storageAfter.local).toEqual(storageBefore.local);
+  expect(storageAfter.databases).toEqual(storageBefore.databases);
+  expect(storageAfter.opfs?.names ?? null).toEqual(storageBefore.opfs);
+  expect(storageAfter.opfs?.text ?? null).toBe(storageBefore.opfs ? 'untouched' : null);
 });
 
 test('the seeded sample restores its visible game state on reset @claim:sample-state', async ({ page }) => {
@@ -235,6 +290,102 @@ test('the sample sends no analytics, ads, or third-party requests @claim:privacy
   await context.close();
 });
 
+test('Copy invite puts the current room URL on the clipboard @claim:copy-invite', async ({ browser, baseURL }) => {
+  const origin = baseURL ?? 'http://127.0.0.1:4173';
+  const context = await browser.newContext();
+  await context.grantPermissions(['clipboard-read', 'clipboard-write'], { origin });
+  const page = await context.newPage();
+  await page.goto(`${origin}/online/`);
+  await page.getByRole('button', { name: 'Create a room' }).click();
+  await expect(page.locator('#online-room')).toBeVisible();
+  const roomCode = (await page.locator('#room-code').textContent())?.trim() ?? '';
+
+  await page.getByRole('button', { name: 'Copy invite' }).click();
+
+  await expect(page.locator('#online-copy-feedback')).toHaveText('Invite link copied.');
+  expect(await page.evaluate(() => navigator.clipboard.readText())).toBe(`${origin}/online/?room=${roomCode}`);
+  await context.close();
+});
+
+test('online rooms provide preset reactions without an open chat or account step @claim:no-open-chat', async ({ page }) => {
+  await page.goto('/online/');
+  await page.getByRole('button', { name: 'Create a room' }).click();
+  await expect(page.locator('#online-room')).toBeVisible();
+
+  const writableFields = await page.locator('input:not([readonly]), textarea').evaluateAll((elements) => elements
+    .filter((element) => element.getClientRects().length > 0 && getComputedStyle(element).visibility !== 'hidden')
+    .map((element) => ({ tag: element.tagName, type: (element as HTMLInputElement).type })));
+  expect(writableFields).toEqual([]);
+  await expect(page.locator('[data-online-reaction]')).toHaveCount(3);
+});
+
+test('local and online preset reactions reach the player who sees them @claim:reaction-pings', async ({ browser, baseURL }) => {
+  const origin = baseURL ?? 'http://127.0.0.1:4173';
+  const localContext = await browser.newContext();
+  const local = await localContext.newPage();
+  await local.goto(`${origin}/`);
+  await local.locator('[data-action="ping"]').first().click();
+  await expect(local.locator('#reaction-ping')).toHaveText('Nice capture!');
+  await expect(local.locator('#reaction-ping')).toBeVisible();
+
+  const hostContext = await browser.newContext();
+  const guestContext = await browser.newContext();
+  const host = await hostContext.newPage();
+  const guest = await guestContext.newPage();
+  await host.goto(`${origin}/online/`);
+  await host.getByRole('button', { name: 'Create a room' }).click();
+  await expect(host.locator('#online-room')).toBeVisible();
+  const roomCode = (await host.locator('#room-code').textContent())?.trim() ?? '';
+  await guest.goto(`${origin}/online/?room=${roomCode}`);
+  await guest.getByRole('button', { name: 'Join the room' }).click();
+  await expect(guest.locator('#online-room')).toBeVisible();
+  await expect(host.locator('#online-players li')).toHaveCount(2);
+
+  await host.locator('[data-online-reaction="Nice!"]').click();
+  await expect(guest.locator('#online-reaction')).toHaveText('Nice!');
+  await expect(guest.locator('#online-reaction')).toBeVisible();
+  await localContext.close();
+  await hostContext.close();
+  await guestContext.close();
+});
+
+test('the Reduce effects setting removes hover movement and touch vibration @claim:reduce-effects', async ({ browser, baseURL }) => {
+  const context = await browser.newContext({ viewport: { width: 393, height: 727 }, hasTouch: true, isMobile: true });
+  const page = await context.newPage();
+  const origin = baseURL ?? 'http://127.0.0.1:4173';
+  await page.addInitScript(() => {
+    Object.defineProperty(Navigator.prototype, 'vibrate', {
+      configurable: true,
+      value: (duration: number) => {
+        const target = window as Window & { __linebreakVibrations?: number[] };
+        target.__linebreakVibrations ??= [];
+        target.__linebreakVibrations.push(duration);
+        return true;
+      },
+    });
+  });
+  await page.goto(`${origin}/`);
+  await page.getByRole('button', { name: 'Open game settings' }).click();
+  await page.getByLabel('Reduce effects').check();
+  await page.getByRole('button', { name: 'Save and close' }).click();
+  const primary = page.getByRole('link', { name: 'Try it with sample data' });
+  await primary.hover();
+  expect(await primary.evaluate((element) => ({ transform: getComputedStyle(element).transform, transition: getComputedStyle(element).transitionDuration }))).toEqual({ transform: 'none', transition: '0s' });
+
+  await startSolo(page);
+  const turnLeft = page.getByRole('button', { name: 'Player 1 steer left' });
+  await turnLeft.tap();
+  expect(await page.evaluate(() => (window as Window & { __linebreakVibrations?: number[] }).__linebreakVibrations ?? [])).toEqual([]);
+
+  await page.getByRole('button', { name: 'Open game settings' }).click();
+  await page.getByLabel('Reduce effects').uncheck();
+  await page.getByRole('button', { name: 'Save and close' }).click();
+  expect(await page.evaluate(() => document.documentElement.dataset.reduceEffects)).toBe('false');
+  await turnLeft.tap();
+  expect(await page.evaluate(() => (window as Window & { __linebreakVibrations?: number[] }).__linebreakVibrations ?? [])).toEqual([12]);
+  await context.close();
+});
+
 test('solo and local rounds work offline after the first visit @claim:offline-play', async ({ browser, baseURL }) => {
   const context = await browser.newContext();
   const page = await context.newPage();
@@ -296,6 +447,10 @@ test('four independent clients finish the same 90-second room and share a rematc
   const results = await Promise.all([host, ...guests].map((page) => page.locator('#online-result').textContent()));
   expect(results[0]).toMatch(/wins|draw/);
   expect(new Set(results).size).toBe(1);
+  await Promise.all([host, ...guests].map(async (page) => {
+    await expect(page.locator('#online-result')).toHaveAttribute('aria-live', 'polite');
+    await expect(page.locator('#online-end-title')).toBeFocused();
+  }));
   await host.getByRole('button', { name: 'Play another round' }).click();
   await expect(host.locator('#online-status-text')).toHaveText('Round active');
   await expect(host.locator('#online-timer')).toHaveText('01:30');
@@ -303,6 +458,68 @@ test('four independent clients finish the same 90-second room and share a rematc
   await Promise.all(guests.map((guest) => expect(guest.locator('#online-status-text')).toHaveText('Round active')));
   await hostContext.close();
   await Promise.all(guestContexts.map((context) => context.close()));
+});
+
+test('online play sends identity and controls, then receives server room state @claim:online-payloads', async ({ browser, baseURL }) => {
+  const origin = baseURL ?? 'http://127.0.0.1:4173';
+  const hostContext = await browser.newContext();
+  const guestContext = await browser.newContext();
+  const host = await hostContext.newPage();
+  const guest = await guestContext.newPage();
+  const postedBodies: string[] = [];
+  host.on('request', (request) => {
+    if (request.method() === 'POST' && request.url().endsWith('/rooms')) postedBodies.push(request.postData() ?? '');
+  });
+  await host.addInitScript(() => {
+    const sent: string[] = [];
+    const received: string[] = [];
+    const socketPrototype = WebSocket.prototype as unknown as {
+      send: (data: string | ArrayBufferLike | Blob | ArrayBufferView) => void;
+      addEventListener: (type: string, listener: EventListenerOrEventListenerObject | null, options?: boolean | AddEventListenerOptions) => void;
+    };
+    const send = socketPrototype.send;
+    const addEventListener = socketPrototype.addEventListener;
+    socketPrototype.send = function trackedSend(this: WebSocket, data: string | ArrayBufferLike | Blob | ArrayBufferView) {
+      sent.push(String(data));
+      return send.call(this, data);
+    };
+    socketPrototype.addEventListener = function trackedAddEventListener(this: WebSocket, type: string, listener: EventListenerOrEventListenerObject | null, options?: boolean | AddEventListenerOptions) {
+      if (type === 'message') addEventListener.call(this, type, (event: Event) => received.push(String((event as MessageEvent).data)), options);
+      return addEventListener.call(this, type, listener, options);
+    };
+    Object.assign(window as Window & { __linebreakSent?: string[]; __linebreakReceived?: string[] }, { __linebreakSent: sent, __linebreakReceived: received });
+  });
+  await host.goto(`${origin}/online/`);
+  await host.getByLabel('Your name').first().fill('Ada');
+  await host.getByRole('button', { name: 'Create a room' }).click();
+  await expect(host.locator('#online-room')).toBeVisible();
+  const roomCode = (await host.locator('#room-code').textContent())?.trim() ?? '';
+  await guest.goto(`${origin}/online/?room=${roomCode}`);
+  await guest.getByRole('button', { name: 'Join the room' }).click();
+  await expect(guest.locator('#online-room')).toBeVisible();
+  await expect(host.locator('#online-players li')).toHaveCount(2);
+  await host.getByRole('button', { name: 'Start online round' }).click();
+  await expect(host.locator('#online-status-text')).toHaveText('Round active');
+  await host.waitForTimeout(180);
+
+  expect(postedBodies.map((body) => JSON.parse(body))).toEqual([{ name: 'Ada' }]);
+  const frames = await host.evaluate(() => {
+    const source = window as Window & { __linebreakSent?: string[]; __linebreakReceived?: string[] };
+    return {
+      sent: (source.__linebreakSent ?? []).map((value) => JSON.parse(value) as Record<string, unknown>),
+      received: (source.__linebreakReceived ?? []).map((value) => JSON.parse(value) as Record<string, unknown>),
+    };
+  });
+  const inputFrames = frames.sent.filter((frame) => frame.type === 'input');
+  expect(frames.sent.some((frame) => frame.type === 'auth' && typeof frame.room === 'string' && typeof frame.token === 'string')).toBe(true);
+  expect(inputFrames.length).toBeGreaterThan(0);
+  expect(inputFrames.every((frame) => Object.keys(frame).sort().join(',') === 'dash,left,right,type')).toBe(true);
+  expect(frames.received.some((frame) => {
+    const room = frame.room as { elapsed?: unknown; players?: Array<{ score?: unknown }> } | undefined;
+    return frame.type === 'snapshot' && typeof room?.elapsed === 'number' && typeof room.players?.[0]?.score === 'number';
+  })).toBe(true);
+  await hostContext.close();
+  await guestContext.close();
 });
 
 test('a dropped client rejoins the active room just before its 20-second limit @claim:online-rejoin', async ({ browser, baseURL }) => {
@@ -420,6 +637,42 @@ test('has keyboard focus, route titles, legal pages, and a designed missing page
   await expect(page).toHaveTitle('Page not found — Linebreak Clash');
   await expect(page.getByRole('link', { name: 'Return to the game' })).toBeVisible();
   expect(errors).toEqual([]);
+});
+
+test('visible focus rings contrast with both paper content and navy navigation', async ({ page }) => {
+  await page.goto('/');
+  const ratios = await page.evaluate(() => {
+    const channel = (value: number) => {
+      const normalized = value / 255;
+      return normalized <= 0.03928 ? normalized / 12.92 : ((normalized + 0.055) / 1.055) ** 2.4;
+    };
+    const luminance = (color: string) => {
+      const match = color.match(/\d+(?:\.\d+)?/g);
+      if (!match || match.length < 3) throw new Error(`Cannot read colour ${color}`);
+      const [red, green, blue] = match.slice(0, 3).map(Number);
+      return 0.2126 * channel(red) + 0.7152 * channel(green) + 0.0722 * channel(blue);
+    };
+    const contrast = (first: string, second: string) => {
+      const [lighter, darker] = [luminance(first), luminance(second)].sort((a, b) => b - a);
+      return (lighter + 0.05) / (darker + 0.05);
+    };
+    const ratioFor = (selector: string) => {
+      const element = document.querySelector<HTMLElement>(selector);
+      if (!element) throw new Error(`Missing ${selector}`);
+      element.focus();
+      if (!element.matches(':focus-visible')) throw new Error(`${selector} did not show a keyboard focus ring`);
+      let background: string | null = null;
+      for (let parent = element.parentElement; parent && !background; parent = parent.parentElement) {
+        const candidate = getComputedStyle(parent).backgroundColor;
+        if (candidate !== 'rgba(0, 0, 0, 0)' && candidate !== 'transparent') background = candidate;
+      }
+      if (!background) throw new Error(`Missing background for ${selector}`);
+      return contrast(getComputedStyle(element).outlineColor, background);
+    };
+    return { content: ratioFor('.primary-choice .button'), navigation: ratioFor('.site-header nav a') };
+  });
+  expect(ratios.content).toBeGreaterThanOrEqual(3);
+  expect(ratios.navigation).toBeGreaterThanOrEqual(3);
 });
 
 test('has no serious accessibility violations on every route', async ({ page }) => {

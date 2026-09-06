@@ -29,7 +29,8 @@ reduces glare around the canvas. The game paints every background explicitly.
 | Success | `#146343` | restored/saved feedback |
 
 All body text and controls meet 4.5:1 contrast. Color is always paired with a
-player number, label, shape, or texture.
+player number, label, shape, or texture. Focus uses ink on paper surfaces and
+paper on navy surfaces, keeping the visible ring above 3:1 in either context.
 
 ## Type and spacing
 

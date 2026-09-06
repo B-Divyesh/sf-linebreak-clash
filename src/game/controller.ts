@@ -74,6 +74,7 @@ export class GameController {
     this.settingsDialog = this.require<HTMLDialogElement>('#settings-dialog');
     this.statusLive = this.require<HTMLElement>('#game-status-live');
     this.settings = isDemo ? { ...DEFAULT_SETTINGS, sound: false } : this.readSettings();
+    this.syncEffectPreference();
     this.state = createGame({ assist: this.settings.assist });
     this.renderer = new ArenaRenderer(this.canvas);
     this.audio = new GameAudio(this.settings.sound);
@@ -414,7 +415,7 @@ export class GameController {
     };
     this.state.assist = this.settings.assist;
     this.audio.setEnabled(this.settings.sound);
-    document.documentElement.dataset.reduceEffects = String(this.settings.reduceEffects);
+    this.syncEffectPreference();
     this.updateControlGuide();
     if (!this.isDemo) localStorage.setItem(SETTINGS_KEY, JSON.stringify(this.settings));
     this.announce('Settings saved on this device.');
@@ -435,6 +436,10 @@ export class GameController {
     guide.innerHTML = this.settings.controls === 'jli'
       ? '<strong>Player 1</strong> J/L steer · I dashes'
       : '<strong>Player 1</strong> A/D steer · Space dashes';
+  }
+
+  private syncEffectPreference(): void {
+    document.documentElement.dataset.reduceEffects = String(this.settings.reduceEffects);
   }
 
   private sendPing(message: string): void {

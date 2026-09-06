@@ -46,6 +46,8 @@ step fit in one breath and identify the job before the arena.
 | Create or join a room | 5 | Pass |
 | Enter the eight characters shared by the host. | 8 | Pass |
 | Share the room code. | 4 | Pass |
+| Copy invite | 2 | Pass |
+| Invite link copied. | 3 | Pass |
 | Two players are needed to start. | 6 | Pass |
 | Waiting for the host to start. | 6 | Pass |
 | Steer with A and D or the buttons. | 8 | Pass |

@@ -26,6 +26,7 @@ For online play, one person creates a room at
 [`/online/`](https://linebreak-clash.sociobot.in/online/) and shares its
 eight-character code or invite link. Two to four independent browsers can join.
 The host starts the round and can start a rematch from the shared end screen.
+Copy invite puts that room link on the device clipboard.
 
 Try the isolated sample at
 [`/demo/`](https://linebreak-clash.sociobot.in/demo/), or use
@@ -83,11 +84,12 @@ dropped online connection remain eligible for recovery for 20 seconds. The
 sample runs in memory and never reads or changes those keys. Solo and local
 rounds work offline after the first visit through the product service worker.
 
-Online play sends the chosen name, controls, and room state only to the
-product-owned room service. SQLite room state survives a service restart and
-expires after 24 hours without activity. There are no accounts, analytics, ads,
-purchases, or third-party game services. See `/privacy/` and `/terms/` for the
-public policies.
+Online play sends the chosen name, room code, and steering or dash input only to
+the product-owned room service. The service sends room state, scores, and the
+timer back to browsers in that room. SQLite room state survives a service
+restart and expires after 24 hours without activity. There are no accounts,
+open chat, analytics, ads, purchases, or third-party game services. See
+`/privacy/` and `/terms/` for the public policies.
 
 ## Deploy
 

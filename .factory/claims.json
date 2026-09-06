@@ -1,7 +1,7 @@
 [
   {
     "id": "free-entry",
-    "claim": "A full local round starts without an account, ad, or payment.",
+    "claim": "A full local round starts without an account or payment.",
     "where": "landing facts, privacy, README",
     "test": "npm test -- --grep @claim:free-entry",
     "sandbox": "fresh browser context; start the real solo mode and assert active play without an identity or payment step"
@@ -36,10 +36,17 @@
   },
   {
     "id": "dash-break",
-    "claim": "A dash briefly crosses a trail without a collision.",
+    "claim": "A dash briefly stops drawing and crosses a trail without a collision.",
     "where": "how to play, README",
     "test": "npm run test:unit -- --testNamePattern @claim:dash-break",
-    "sandbox": "seeded core state; drive a dashing player through an existing opposing segment and assert the player remains active"
+    "sandbox": "seeded core state; drive a dashing player through an existing opposing segment and assert the player remains active without adding a trail point"
+  },
+  {
+    "id": "trail-expiry",
+    "claim": "Trails are temporary and leave the arena after their lifetime.",
+    "where": "README game description",
+    "test": "npm run test:unit -- --testNamePattern @claim:trail-expiry",
+    "sandbox": "seeded core state with an aged trail point; advance one fixed step and assert the point is no longer present"
   },
   {
     "id": "play-modes",
@@ -70,6 +77,27 @@
     "sandbox": "fresh real game; change all four controls, reload, and assert each restored value"
   },
   {
+    "id": "sound-feedback",
+    "claim": "With Sound on, captures and collisions play short tones.",
+    "where": "Sound setting",
+    "test": "npm run test:unit -- --testNamePattern @claim:sound-feedback",
+    "sandbox": "mock Web Audio output; play capture and collision events and assert distinct oscillator tones are started"
+  },
+  {
+    "id": "reduce-effects",
+    "claim": "Reduce effects removes control movement and touch vibration.",
+    "where": "Reduce effects setting",
+    "test": "npm test -- --grep @claim:reduce-effects",
+    "sandbox": "fresh real game with a vibration fixture; enable the setting, assert hovered controls do not move and touch input does not vibrate, then disable it and assert vibration returns"
+  },
+  {
+    "id": "assist-mode",
+    "claim": "Assist mode slows trails and adds collision space.",
+    "where": "Assist mode setting",
+    "test": "npm run test:unit -- --testNamePattern @claim:assist-mode",
+    "sandbox": "paired seeded core states; advance normal and assist play near the same trail and assert assist moves less and avoids the near collision"
+  },
+  {
     "id": "refresh-recovery",
     "claim": "An active round recovers after a refresh within 20 seconds.",
     "where": "privacy, README",
@@ -81,7 +109,7 @@
     "claim": "The sample never reads or changes saved game data.",
     "where": "sample banner, release scope, privacy, README",
     "test": "npm test -- --grep @claim:demo-isolation",
-    "sandbox": "preseed real settings; enter sample in one click, change settings, reset, and assert the real value and demo-key list are unchanged"
+    "sandbox": "preseed real settings, a valid active round, an online key, IndexedDB, and OPFS; enter sample in one click, change sample settings, reset, and assert every real record and storage namespace is unchanged"
   },
   {
     "id": "sample-state",
@@ -89,6 +117,13 @@
     "where": "sample page, demo guide, README",
     "test": "npm test -- --grep @claim:sample-state",
     "sandbox": "fresh sample page; observe its score and clock, inspect the rendered sample state, advance briefly, reset, and assert scores, captures, trails, relays, and clock return"
+  },
+  {
+    "id": "reaction-pings",
+    "claim": "Preset reactions appear locally and in the same online room.",
+    "where": "reaction controls",
+    "test": "npm test -- --grep @claim:reaction-pings",
+    "sandbox": "fresh local game and two independent online browsers; send a preset reaction and assert the visible reaction text in each promised recipient"
   },
   {
     "id": "privacy-requests",
@@ -133,11 +168,32 @@
     "sandbox": "four independent browser contexts create and join a real room, assert its 90-second duration, finish the accelerated test run with one shared result, and start a zero-score rematch"
   },
   {
+    "id": "copy-invite",
+    "claim": "Copy invite puts the current room link on the device clipboard.",
+    "where": "online room, README",
+    "test": "npm test -- --grep @claim:copy-invite",
+    "sandbox": "fresh online host with granted clipboard permission; create a room, choose Copy invite, and assert the clipboard contains that room URL"
+  },
+  {
+    "id": "no-open-chat",
+    "claim": "Online rooms need no account and offer preset reactions instead of open chat.",
+    "where": "online page, README",
+    "test": "npm test -- --grep @claim:no-open-chat",
+    "sandbox": "fresh online host; create a room, assert no visible writable text field remains and exactly the three preset reaction controls are available"
+  },
+  {
     "id": "server-authority",
     "claim": "The online room service decides scores, collisions, positions, and time; browsers only send steering and dash input.",
     "where": "README",
     "test": "npm run test:realtime",
     "sandbox": "authenticated raw room client sends forged score, position, collision, and clock fields alongside input; assert the next server snapshot retains server-controlled values"
+  },
+  {
+    "id": "online-payloads",
+    "claim": "Online play sends a chosen name, room code, and controls; the room service sends scores, timer, and room state back.",
+    "where": "privacy page, README",
+    "test": "npm test -- --grep @claim:online-payloads",
+    "sandbox": "fresh two-client room; record create, WebSocket send, and WebSocket receive payloads, then assert the documented client fields and server snapshot fields"
   },
   {
     "id": "online-rejoin",

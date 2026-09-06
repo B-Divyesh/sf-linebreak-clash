@@ -29,6 +29,6 @@ from the bundled seed.
 
 The outcome-based `@claim:sample-state` browser test proves the 4–2 score,
 three captures, both visible trail sets, three relays, 56-second clock, and
-exact reset state. `@claim:demo-isolation` preloads a real setting, changes a
-sample setting, resets, and proves the real value and storage key list remain
-unchanged.
+exact reset state. `@claim:demo-isolation` preloads real settings, an active
+round, an online key, IndexedDB, and OPFS data, changes a sample setting,
+resets, and proves every real record and storage namespace remains unchanged.

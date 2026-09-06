@@ -65,6 +65,7 @@ describe('deterministic game core', () => {
     advanceGame(game, inputs);
     expect(blue.alive).toBe(true);
     expect(blue.dashRemaining).toBeGreaterThan(0);
+    expect(blue.trail).toHaveLength(0);
   });
 
   it('gives the other player one point when a trail collision happens @claim:collision-score', () => {
@@ -86,13 +87,34 @@ describe('deterministic game core', () => {
     expect(blue.respawnRemaining).toBeGreaterThan(0);
   });
 
-  it('removes old trail points from the arena', () => {
+  it('removes old trail points from the arena @claim:trail-expiry', () => {
     const game = createGame({ seed: 47, status: 'playing', mode: 'local' });
     game.players.blue.alive = false;
     game.players.blue.respawnRemaining = 10;
     game.players.blue.trail = [{ x: 200, y: 200, age: 8.49 }];
     advanceGame(game, emptyInputs());
     expect(game.players.blue.trail).toHaveLength(0);
+  });
+
+  it('slows movement and leaves more collision space in assist mode @claim:assist-mode', () => {
+    const normal = createGame({ seed: 51, status: 'playing', mode: 'local', assist: false });
+    const assisted = createGame({ seed: 51, status: 'playing', mode: 'local', assist: true });
+    for (const game of [normal, assisted]) {
+      const blue = game.players.blue;
+      Object.assign(blue, { x: 200, y: 200, previousX: 200, previousY: 200, angle: 0 });
+      game.players.coral.trail = [
+        { x: 207.8, y: 180, age: 1 },
+        { x: 207.8, y: 220, age: 1 },
+        { x: 207.8, y: 230, age: 1 },
+      ];
+    }
+
+    advanceGame(normal, emptyInputs());
+    advanceGame(assisted, emptyInputs());
+
+    expect(normal.players.blue.x - 200).toBeGreaterThan(assisted.players.blue.x - 200);
+    expect(normal.players.blue.alive).toBe(false);
+    expect(assisted.players.blue.alive).toBe(true);
   });
 
   it('moves the seeded solo bot without player input', () => {

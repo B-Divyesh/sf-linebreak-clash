@@ -240,16 +240,17 @@ function onlinePage(): string {
           <input id="invite-link" readonly>
           <button class="button secondary compact" type="button" id="copy-room">Copy invite</button>
         </div>
+        <p id="online-copy-feedback" class="inline-feedback" role="status" aria-live="polite"></p>
         <ul id="online-players" class="online-players" aria-label="Players in this room"></ul>
         <div class="online-round-bar">
-          <p><strong id="online-status-text">Waiting for players</strong><span id="online-timer">01:30</span></p>
+          <p><strong id="online-status-text" role="status" aria-live="polite" aria-atomic="true">Waiting for players</strong><span id="online-timer">01:30</span></p>
           <button class="button" type="button" id="start-online" disabled>Start online round</button>
           <span id="online-wait-note">Share the room code. Two players are needed to start.</span>
         </div>
         <div class="arena-wrap online-canvas-wrap">
           <canvas id="online-arena" width="960" height="560" role="img" aria-label="Waiting online arena"></canvas>
           <p id="online-reaction" class="reaction-ping" role="status" hidden></p>
-          <section id="online-end" class="end-screen" aria-labelledby="online-end-title" hidden><p class="section-kicker">Round result</p><h2 id="online-end-title">Round complete</h2><p id="online-result"></p><button class="button" type="button" id="restart-online">Play another round</button><p id="online-restart-note"></p></section>
+          <section id="online-end" class="end-screen" aria-labelledby="online-end-title" aria-live="polite" aria-atomic="true" hidden><p class="section-kicker">Round result</p><h2 id="online-end-title" tabindex="-1">Round complete</h2><p id="online-result" role="status" aria-live="polite" aria-atomic="true"></p><button class="button" type="button" id="restart-online">Play another round</button><p id="online-restart-note"></p></section>
         </div>
         <div class="online-controls" aria-label="Online steering controls">
           <button type="button" data-online-control="left">Turn left</button>
@@ -304,7 +305,8 @@ function privacyPage(): string {
       </section>
       <section aria-labelledby="sent-title">
         <h2 id="sent-title">Data sent elsewhere</h2>
-        <p>Online play sends your chosen name, controls, scores, and room state to this product's room service.</p>
+        <p>Online play sends your chosen name, room code, and steering or dash input to this product's room service.</p>
+        <p>The room service sends scores, the timer, and room state back to the browsers in that room.</p>
         <p>The room service uses a private SQLite database so a room survives a service restart.</p>
         <p>Inactive room records are removed after 24 hours.</p>
         <p>No data goes to analytics, advertising, or third-party game services.</p>

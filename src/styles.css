@@ -33,9 +33,10 @@ button, input, select { font: inherit; }
 a { color: inherit; text-decoration-thickness: 2px; text-underline-offset: 3px; }
 button, a { -webkit-tap-highlight-color: transparent; }
 button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible, canvas:focus-visible, [tabindex="-1"]:focus-visible {
-  outline: 4px solid var(--relay);
+  outline: 4px solid var(--ink);
   outline-offset: 3px;
 }
+.site-header a:focus-visible, .site-footer a:focus-visible { outline-color: var(--paper); }
 button:disabled { cursor: not-allowed; opacity: .48; box-shadow: none; transform: none; }
 [hidden] { display: none !important; }
 
@@ -262,6 +263,7 @@ dialog::backdrop { background: rgba(16, 35, 61, .75); }
 .room-header h2 { margin-bottom: 8px; }
 .connection-status { min-height: 32px; margin: 0 0 8px; padding: 4px 10px; border: 2px solid var(--ink); background: var(--relay); font-weight: 800; }
 .invite-row { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 10px; margin-bottom: 12px; }
+.inline-feedback { min-height: 24px; margin: -4px 0 10px; color: var(--success); font-weight: 800; }
 .online-players { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin: 0 0 12px; padding: 0; list-style: none; }
 .online-players li { min-height: 50px; display: grid; grid-template-columns: 12px 1fr auto auto; align-items: center; gap: 8px; padding: 7px 9px; border: 2px solid var(--ink); }
 .online-players li > span:not(.online-color) { color: var(--ink-muted); font-size: .75rem; }

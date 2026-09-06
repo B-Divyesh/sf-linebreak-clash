@@ -46,6 +46,7 @@ export class OnlineController {
   private input = { left: false, right: false, dash: false };
   private destroyed = false;
   private reactionTimer = 0;
+  private lastRoomStatus: OnlineRoom['status'] | null = null;
   private readonly resizeObserver: ResizeObserver;
   private readonly canvas: HTMLCanvasElement;
   private readonly context: CanvasRenderingContext2D;
@@ -194,6 +195,7 @@ export class OnlineController {
 
   private render(): void {
     if (!this.room || !this.identity) return;
+    const announceEnd = this.room.status === 'ended' && this.lastRoomStatus !== 'ended';
     this.require<HTMLElement>('#room-code').textContent = this.room.code;
     this.require<HTMLInputElement>('#invite-link').value = `${location.origin}/online/?room=${this.room.code}`;
     this.require<HTMLElement>('#online-room').hidden = false;
@@ -230,7 +232,9 @@ export class OnlineController {
       restart.hidden = !isHost;
       restart.disabled = connectedPlayers < 2;
       this.require<HTMLElement>('#online-restart-note').textContent = restart.hidden ? 'The host can start the next round.' : 'Scores and the timer reset for everyone.';
+      if (announceEnd) this.require<HTMLElement>('#online-end-title').focus();
     }
+    this.lastRoomStatus = this.room.status;
   }
 
   private drawEmpty(): void { this.context.fillStyle = '#f3eddf'; this.context.fillRect(0, 0, WORLD_WIDTH, WORLD_HEIGHT); this.context.fillStyle = '#10233d'; this.context.font = '700 30px Arial'; this.context.textAlign = 'center'; this.context.fillText('Create or join a room', WORLD_WIDTH / 2, WORLD_HEIGHT / 2); }
@@ -246,7 +250,16 @@ export class OnlineController {
     this.canvas.setAttribute('aria-label', `${this.room.status} online arena with ${this.room.players.length} players. ${this.room.players.map((player) => `${player.name} ${player.score} points`).join(', ')}.`);
   }
 
-  private async copyInvite(): Promise<void> { try { await navigator.clipboard.writeText(this.require<HTMLInputElement>('#invite-link').value); this.setStatus('Invite link copied.'); } catch { this.require<HTMLInputElement>('#invite-link').select(); this.setStatus('Invite link selected. Copy it from the field.'); } }
+  private async copyInvite(): Promise<void> {
+    const feedback = this.require<HTMLElement>('#online-copy-feedback');
+    try {
+      await navigator.clipboard.writeText(this.require<HTMLInputElement>('#invite-link').value);
+      feedback.textContent = 'Invite link copied.';
+    } catch {
+      this.require<HTMLInputElement>('#invite-link').select();
+      feedback.textContent = 'Invite link selected. Copy it from the field.';
+    }
+  }
   private leave(): void {
     if (this.identity) localStorage.removeItem(`linebreak-clash:online:${this.identity.code}`);
     this.identity = null;
