@@ -3,6 +3,7 @@
 ## Repair verification — PASS
 
 Implementation SHA: `54b09c184e48dffdba3b2e03a4124be0f198edb5`.
+Verification documentation SHA: `f5205abd224bc885ecbabb4a772d92b4c20fabfa`.
 
 This repair resolves all three findings from independent verification 1:
 
