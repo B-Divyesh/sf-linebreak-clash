@@ -3,8 +3,8 @@
 ## Repair 2 — PASS
 
 Implementation SHA: `8498e209db0f9f29641e883a3f3fd5acdac1f409`.
-The separate documentation SHA is recorded in the follow-up handoff pointer
-commit. Full evidence is in [verification-3.md](./verification-3.md).
+Verification documentation SHA: `e6a95c8892f2a21a4073e12f32f68355721e0428`.
+Full evidence is in [verification-3.md](./verification-3.md).
 
 This repair closes the three failures from independent verification 2:
 
