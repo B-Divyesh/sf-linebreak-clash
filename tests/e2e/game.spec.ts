@@ -20,6 +20,28 @@ async function expectTouchTargets(page: Page): Promise<void> {
   expect(undersized).toEqual([]);
 }
 
+async function expectPopulatedRoomToFitPhone(page: Page): Promise<void> {
+  const layout = await page.evaluate(() => {
+    const list = document.querySelector<HTMLElement>('#online-players');
+    if (!list) throw new Error('Missing player list');
+    return {
+      viewportWidth: window.innerWidth,
+      documentWidth: document.documentElement.scrollWidth,
+      listWidth: list.clientWidth,
+      listContentWidth: list.scrollWidth,
+      cards: [...list.querySelectorAll<HTMLElement>('li')].map((card) => {
+        const rect = card.getBoundingClientRect();
+        return { left: rect.left, right: rect.right };
+      }),
+    };
+  });
+
+  expect(layout.documentWidth).toBeLessThanOrEqual(layout.viewportWidth);
+  expect(layout.listContentWidth).toBeLessThanOrEqual(layout.listWidth);
+  expect(layout.cards).toHaveLength(2);
+  expect(layout.cards.every((card) => card.left >= 0 && card.right <= layout.viewportWidth)).toBe(true);
+}
+
 test('starts the complete game without an account, ad, or payment @claim:free-entry', async ({ page }) => {
   await page.goto('/');
   await startSolo(page);
@@ -600,6 +622,24 @@ test('touch controls steer mobile play and visible links and controls meet the 4
   await expectTouchTargets(page);
   const createButton = await page.getByRole('button', { name: 'Create a room' }).boundingBox();
   expect(createButton?.height ?? 0).toBeGreaterThanOrEqual(44);
+  await page.getByLabel('Your name').first().fill('Alexandra-Team-Alpha');
+  await page.getByRole('button', { name: 'Create a room' }).click();
+  await expect(page.locator('#online-room')).toBeVisible();
+  const roomCode = (await page.locator('#room-code').textContent())?.trim() ?? '';
+  const guestContext = await browser.newContext({ viewport: { width: 393, height: 727 }, deviceScaleFactor: 2.75, hasTouch: true, isMobile: true });
+  const guest = await guestContext.newPage();
+  await guest.goto(`${baseURL}/online/`);
+  await guest.getByLabel('Your name').last().fill('Christopher-Player-2');
+  await guest.getByLabel('Room code').fill(roomCode);
+  await guest.getByRole('button', { name: 'Join the room' }).click();
+  await expect(page.locator('#online-players li')).toHaveCount(2);
+  await expect(guest.locator('#online-players li')).toHaveCount(2);
+  await expect(page.locator('#online-players')).toContainText('Alexandra-Team-Alpha');
+  await expect(page.locator('#online-players')).toContainText('Christopher-Player-2');
+  await expectPopulatedRoomToFitPhone(page);
+  await expectPopulatedRoomToFitPhone(guest);
+  await expectTouchTargets(page);
+  await guestContext.close();
   await page.goto(`${baseURL}/demo/`);
   await expectTouchTargets(page);
   await page.goto(`${baseURL}/privacy/`);

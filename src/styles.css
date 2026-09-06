@@ -264,8 +264,9 @@ dialog::backdrop { background: rgba(16, 35, 61, .75); }
 .connection-status { min-height: 32px; margin: 0 0 8px; padding: 4px 10px; border: 2px solid var(--ink); background: var(--relay); font-weight: 800; }
 .invite-row { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 10px; margin-bottom: 12px; }
 .inline-feedback { min-height: 24px; margin: -4px 0 10px; color: var(--success); font-weight: 800; }
-.online-players { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin: 0 0 12px; padding: 0; list-style: none; }
-.online-players li { min-height: 50px; display: grid; grid-template-columns: 12px 1fr auto auto; align-items: center; gap: 8px; padding: 7px 9px; border: 2px solid var(--ink); }
+.online-players { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; margin: 0 0 12px; padding: 0; list-style: none; }
+.online-players li { min-height: 50px; display: grid; grid-template-columns: 12px minmax(0, 1fr) auto auto; align-items: center; gap: 8px; padding: 7px 9px; border: 2px solid var(--ink); }
+.online-players strong { min-width: 0; overflow-wrap: anywhere; }
 .online-players li > span:not(.online-color) { color: var(--ink-muted); font-size: .75rem; }
 .online-color { width: 12px; height: 28px; background: var(--cobalt); }
 .online-color.slot-1 { background: var(--vermilion); }
@@ -347,7 +348,7 @@ dialog::backdrop { background: rgba(16, 35, 61, .75); }
   .room-header { align-items: start; }
   .invite-row { grid-template-columns: 1fr auto; }
   .invite-row label { grid-column: 1 / -1; }
-  .online-players { grid-template-columns: 1fr 1fr; }
+  .online-players { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .online-round-bar { grid-template-columns: 1fr; }
   .online-room { padding: 10px; }
   .site-footer { grid-template-columns: 1fr; gap: 14px; }
@@ -372,6 +373,10 @@ dialog::backdrop { background: rgba(16, 35, 61, .75); }
   .timer { min-width: 72px; }
   .control-guide { display: none; }
   .ping-list span { flex-basis: 100%; }
+}
+
+@media (max-width: 520px) {
+  .online-players { grid-template-columns: minmax(0, 1fr); }
 }
 
 @media (max-width: 360px) {
