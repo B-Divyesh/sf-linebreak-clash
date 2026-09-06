@@ -1,5 +1,29 @@
 # Linebreak Clash handoff
 
+## Strict review 1 — PASS
+
+Implementation reviewed: `8498e209db0f9f29641e883a3f3fd5acdac1f409`.
+Documentation baseline: `0803a93733e11758b5e7e8e445ec6a72fc46fd1d`.
+
+Fresh strict review found **0 findings and 0 untested public claims**. From a
+clean checkout, `npm ci` succeeded with no vulnerabilities, every one of the
+30 declared claim commands was run separately, and `CI=1 npm run check`
+passed: 10 unit tests, realtime authority/persistence/rate-limit integration,
+a production build, and 26 Chromium browser tests. Build output is 15.28 KB
+gzip JavaScript and 4.94 KB gzip CSS.
+
+Fresh desktop and phone live runs showed the job, audience, arena, and sample
+action before scrolling. The labelled 4–2 sample reset without changing real
+settings. Phone play measured 60.0 FPS; offline and reduced-motion paths
+passed. Two independent live clients completed a real 90-second room, rejoined
+after a drop, received a focused polite result, and shared a zero-score
+rematch. The product-only backend check passed health, isolation, restart
+persistence, and 429/`Retry-After: 60` handling. Fresh live Axe checks found
+zero violations on all product routes and the designed 404.
+
+Full evidence: [review-1.md](./review-1.md). Chromium was used for automated
+and live verification; Safari and Firefox remain manual release checks.
+
 ## Independent verification 3 — PASS
 
 Implementation reviewed: `8498e209db0f9f29641e883a3f3fd5acdac1f409`.
